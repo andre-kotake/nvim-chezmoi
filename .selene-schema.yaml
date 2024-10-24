@@ -1,0 +1,7 @@
+---
+base: lua52
+name: .selene-schema
+
+globals:
+  vim:
+    any: true

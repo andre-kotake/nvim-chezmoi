@@ -1,0 +1,32 @@
+local runner = require("nvim-chezmoi.core.runner").new()
+
+--- Executes the `chezmoi` command asynchronously.
+--- @param args string[] The arguments to pass to the `chezmoi` command.
+--- @param callback fun(args: {code: number, signal: number, stdout: string, stderr: string})? An optional callback function called when the command finishes executing.
+local function run(args, callback)
+  local cmd = { "chezmoi" }
+
+  for _, arg in ipairs(args) do
+    table.insert(cmd, arg)
+  end
+
+  runner:run_async_command(cmd, callback)
+end
+
+--- Gets the source directory for the `chezmoi` configuration.
+--- @param callback fun(args: {code: number, signal: number, stdout: string, stderr: string})? An optional callback function called when the command finishes executing.
+local function source_dir(callback)
+  run({ "source-path" }, callback)
+end
+
+--- Gets the target path for a given source `file`.
+--- @param file string The source file.
+--- @param callback fun(args: {code: number, signal: number, stdout: string, stderr: string})? An optional callback function called when the command finishes executing.
+local function target_path(file, callback)
+  run({ "target-path", file }, callback)
+end
+
+return {
+  source_dir = source_dir,
+  target_path = target_path,
+}
