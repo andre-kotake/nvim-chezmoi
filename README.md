@@ -46,7 +46,7 @@ Default configuration values for `nvim-chezmoi`:
 
 ```lua
   {
-    -- Show extra debug messages..
+    -- Show extra debug messages.
     debug = false,
     -- Default source path for your dotfiles.
     source_path = "$HOME/.local/share/chezmoi",
@@ -62,7 +62,7 @@ You can change the default source path if your dotfiles source is in a different
 The plugin provides the following user commands only for files inside the source:
 
 - `:ChezmoiDetectFileType`: Detects the correct filetype for the opened source file. Not really much use since it does it by default whenever you open a file.
-- `:ChezmoiExecuteTemplate`: Opens a non-listrd scratch buffer with the executed template for a opened file. Only applies for files with the ".tmpl" extension.
+- `:ChezmoiExecuteTemplate`: Opens a non-listed scratch buffer with the executed template for a opened file. Only applies for files with the ".tmpl" extension.
 
 ## Why
 
