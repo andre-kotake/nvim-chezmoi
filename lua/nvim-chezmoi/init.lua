@@ -59,10 +59,10 @@ function M.setup(opts)
     return vim.api.nvim_create_augroup("nvim-chezmoi_" .. name, {})
   end
 
-  local autocmd = function(events, group, pattern, callback)
-    vim.api.nvim_create_autocmd(events, {
-      group = augroup(group),
-      pattern = pattern,
+  local autocmd = function(callback)
+    vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
+      group = augroup("source-path"),
+      pattern = config.source_path .. "/*",
       callback = callback,
     })
   end
@@ -75,34 +75,27 @@ function M.setup(opts)
   end
 
   --- Set filetype for source file
-  autocmd(
-    { "BufNewFile", "BufRead" },
-    "source-path",
-    config.source_path .. "/*",
-    function(ev)
-      user_cmd(
-        ev.buf,
-        "ChezmoiDetectFileType",
-        "Detect the filetype for a source file",
-        function()
-          detect_filetype(ev.buf, ev.file)
-        end
-      )
-
-      user_cmd(
-        ev.buf,
-        "ChezmoiExecuteTemplate",
-        "Preview the file template",
-        function()
-          execute_template(ev.buf, ev.file)
-        end
-      )
-
-      if config.edit.detect_filetype then
-        vim.cmd("ChezmoiDetectFileType")
+  autocmd(function(ev)
+    user_cmd(
+      ev.buf,
+      "ChezmoiDetectFileType",
+      "Detect the filetype for a source file",
+      function()
+        detect_filetype(ev.buf, ev.file)
       end
-    end
-  )
+    )
+
+    user_cmd(
+      ev.buf,
+      "ChezmoiExecuteTemplate",
+      "Preview the file template",
+      function()
+        execute_template(ev.buf, ev.file)
+      end
+    )
+
+    vim.cmd("ChezmoiDetectFileType")
+  end)
 
   return M
 end
