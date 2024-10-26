@@ -4,6 +4,10 @@ M.trim = function(s)
   return s:gsub("^%s*(.-)%s*$", "%1")
 end
 
+M.fullpath = function(s)
+  return vim.fn.fnamemodify(s, ":p")
+end
+
 M.isChildPath = function(parent, child)
   -- Normalize paths (remove trailing slashes for consistency)
   parent = parent:gsub("/$", "")

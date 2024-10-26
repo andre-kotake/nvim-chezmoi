@@ -3,7 +3,8 @@ if vim.fn.executable("chezmoi") == 0 then
   error(debug.traceback("chezmoi executable not found in PATH."))
 end
 
-local runner = require("nvim-chezmoi.chezmoi.runner")
+local runner = require("nvim-chezmoi.core.runner")
+local utils = require("nvim-chezmoi.core.utils")
 
 --- @class Chezmoi
 --- @field source-path string
@@ -12,19 +13,38 @@ local runner = require("nvim-chezmoi.chezmoi.runner")
 local M = {
   managed = {},
 }
-M.__index = M
 
-local function exec(args, stdin, on_exit)
-  runner:new(args, stdin, on_exit):run()
+---@param args string[]
+---@param stdin? string[]
+local function exec(args, stdin)
+  runner.exec({
+    args = args,
+    stdin = stdin or {},
+  })
+end
+
+---@param args string[]
+---@param stdin? string[]
+--- @param on_exit? fun(args: any)
+local function exec_async(args, stdin, on_exit)
+  runner.exec_async({
+    args = args,
+    stdin = stdin or {},
+    on_exit = on_exit,
+  })
 end
 
 function M:get_target_path(source_file, callback)
-  source_file = vim.fn.fnamemodify(source_file, ":p")
-  exec({ "target-path", source_file }, nil, function(result)
-    if self.managed[source_file] == nil then
-      local target_file = result.data[1]
-      local ft = runner.get_filetype(target_file, source_file)
+  source_file = utils.fullpath(source_file)
 
+  exec_async({ "target-path", source_file }, nil, function(result)
+    local managed_file = M.managed[source_file]
+
+    if managed_file == nil or managed_file.ft == nil then
+      local target_file = result.data[1]
+
+      -- Try filetype from plenary first
+      local ft = runner.get_filetype(target_file)
       -- Plenary could't find the filetype, try temp buf
       if ft == nil or ft == "" then
         local tmp_buf = vim.api.nvim_create_buf(false, true)
@@ -41,20 +61,21 @@ function M:get_target_path(source_file, callback)
       })
 
       -- Cache it.
-      self.managed[source_file] = {
+      M.managed[source_file] = {
         target = target_file,
         ft = ft,
       }
     end
 
-    callback(self.managed[source_file])
+    callback(M.managed[source_file])
   end)
 end
 
 function M:execute_template(buf, source_file, callback)
-  source_file = vim.fn.fnamemodify(source_file, ":p")
+  source_file = utils.fullpath(source_file)
+
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  exec({ "execute-template" }, table.concat(lines, "\n"), function(result)
+  exec_async({ "execute-template" }, table.concat(lines, "\n"), function(result)
     -- Create a new buffer
     local bufnr = vim.api.nvim_create_buf(false, true)
     -- Set the buffer as the current one
@@ -70,14 +91,17 @@ function M:execute_template(buf, source_file, callback)
   end)
 end
 
--- function M:get_filetype(source_file)
---   local target_file = self["managed"][source_file]
---   if target_file == nil then
---     self:get_target_path(source_file,function(s)
---         s["managed"][source_file]=
---     end)
---   end
--- end
+function M.get_managed_files()
+  local managed_files = exec({
+    "managed",
+    "--path-style",
+    "source-absolute",
+    "--include",
+    "files",
+    "--exclude",
+    "externals",
+  })
+end
 
 return M
 

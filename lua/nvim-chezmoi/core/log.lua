@@ -5,20 +5,21 @@ local T = {
   print_debug = false,
 }
 
---- @param message string: The message to log as info.
-function T.info(message)
-  vim.notify(":: [INFO]\n" .. message, vim.log.levels.INFO, {})
+local notify = function(message, level)
+  vim.notify(message, level, { title = "nvim-chezmoi" })
 end
 
---- @param message string: The message to log as debug.
+function T.info(message)
+  notify(":: [INFO]\n" .. message, vim.log.levels.INFO)
+end
+
 function T.debug(message)
   local logLevel = T.print_debug and vim.log.levels.INFO or vim.log.levels.DEBUG
-  vim.notify(":: [DEBUG]\n" .. message, logLevel, {})
+  notify(":: [DEBUG]\n" .. message, logLevel)
 end
 
---- @param message string: The message to log as error.
 function T.error(message)
-  vim.notify(":: [ERROR]\n" .. message, vim.log.levels.ERROR, {})
+  notify(":: [ERROR]\n" .. message, vim.log.levels.ERROR)
 end
 
 return T

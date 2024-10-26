@@ -1,23 +1,27 @@
 --- Plugin configuration
 --- @class NvimChezmoiConfig
-local config = {
-  debug = false,
-  source_path = vim.fn.expand("~/.local/share/chezmoi"),
-}
+--- @field debug boolean
+--- @field source_path string
 
 --- @class NvimChezmoi
-local M = {}
+--- @field opts NvimChezmoiConfig
+local M = {
+  opts = {
+    debug = false,
+    source_path = vim.fn.expand("~/.local/share/chezmoi"),
+  },
+}
 
---- @type NvimChezmoi.Core.Log
 local log = require("nvim-chezmoi.core.log")
-
---- @type boolean,Chezmoi
 local _chezmoi_ok, chezmoi = pcall(require, "nvim-chezmoi.chezmoi")
 if not _chezmoi_ok then
   log.error("An error has ocurred. Skipping nvim-chezmoi config.")
   error(chezmoi)
 end
 
+--- Detect Filetype for a source file
+---@param buf integer
+---@param filename string
 local detect_filetype = function(buf, filename)
   chezmoi:get_target_path(filename, function(managed)
     local filetype = vim.bo[buf].filetype
@@ -35,13 +39,14 @@ local detect_filetype = function(buf, filename)
   end)
 end
 
+--- Executes the template for a file and sets the filetype
+--- @param buf integer
+--- @param file string
 local execute_template = function(buf, file)
   local filename = vim.fn.expand("%:t")
   if filename:match("%.tmpl$") then
     log.debug("Executing template for file: " .. file)
-
     chezmoi:execute_template(buf, file, function(bufnr)
-      -- Set filetype for the executed template buffer
       vim.bo[bufnr].filetype = vim.bo[buf].filetype
     end)
   else
@@ -50,19 +55,23 @@ local execute_template = function(buf, file)
 end
 
 --- @param opts? NvimChezmoiConfig | nil
---- @return NvimChezmoi | nil
 function M.setup(opts)
-  config = vim.tbl_deep_extend("force", config, opts or {})
-  log.print_debug = config.debug
+  M.opts = vim.tbl_deep_extend("force", M.opts, opts or {})
+  log.print_debug = M.opts.debug
+
+  require("telescope").load_extension("nvim-chezmoi")
 
   local augroup = function(name)
     return vim.api.nvim_create_augroup("nvim-chezmoi_" .. name, {})
   end
 
   local autocmd = function(callback)
-    vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
+    vim.api.nvim_create_autocmd({
+      "BufNewFile",
+      "BufRead",
+    }, {
       group = augroup("source-path"),
-      pattern = config.source_path .. "/*",
+      pattern = M.opts.source_path .. "/*",
       callback = callback,
     })
   end
@@ -96,8 +105,6 @@ function M.setup(opts)
 
     vim.cmd("ChezmoiDetectFileType")
   end)
-
-  return M
 end
 
 return M
