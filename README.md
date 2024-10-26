@@ -1,6 +1,6 @@
 # nvim-chezmoi
 
-A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmoi.io/), written entirely in Lua.
+A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmoi.io/).
 
 ## Requirements
 
