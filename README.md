@@ -60,8 +60,6 @@ Default configuration values for `nvim-chezmoi`:
 
 Once installed, `nvim-chezmoi` will automatically call [chezmoi](https://www.chezmoi.io/) commands asynchronously whenever you open a source file.
 
-You can change the default source path if your dotfiles source is in a different path.
-
 The plugin provides the following user commands:
 
 ### Global
@@ -75,9 +73,9 @@ The plugin provides the following user commands:
 
 ## To do
 
-- Replace target files for the source files (chezmoi edit automatically)
+- Replace target files for the source files (chezmoi edit automatically).
 - Auto apply on save.
-- Refactor Telescope extension
+- Refactor Telescope extension.
 
 ## Acknowledgements
 
@@ -86,6 +84,7 @@ Stuff that helped me or inspired this:
 - [chezmoi](https://www.chezmoi.io/)
 - [plenary](https://github.com/nvim-lua/plenary.nvim/)
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)
+
 For cool alternatives:
 
 - [alker0/chezmoi.vim](https://github.com/alker0/chezmoi.vim)
@@ -94,7 +93,7 @@ For cool alternatives:
 
 ## Contributing
 
-All contributions and suggestions are welcome; Feel free to open a issue or pull request.
+All contributions and suggestions are welcome; Feel free to open an issue or pull request.
 
 ## License
 
