@@ -8,20 +8,22 @@ local plenary_filetype = require("plenary.filetype")
 --- @field package job Job
 local M = {}
 
-local function get_result(job, code)
+local function get_result(job)
   local result = job:result()
+  local success = true
 
-  if code ~= 0 then
+  if #result == 0 then
     -- Error, trim each and join with newline
     local stderr = {}
     for _, v in ipairs(job:stderr_result()) do
       stderr[#stderr + 1] = v:gsub("^%s*(.-)%s*$", "%1")
     end
     result = { table.concat(stderr, "\n") }
+    success = false
   end
 
   return {
-    code = code,
+    success = success,
     data = result,
   }
 end
@@ -31,10 +33,11 @@ local function new(opts)
     command = "chezmoi",
     args = opts.args,
     writer = opts.stdin,
+    cwd = opts.cwd,
     on_exit = function(_job, _code)
       -- Execute callback if provided.
       if type(opts.on_exit) == "function" then
-        local result = get_result(_job, _code)
+        local result = get_result(_job)
         vim.schedule_wrap(opts.on_exit)(result)
       end
     end,
@@ -42,15 +45,10 @@ local function new(opts)
 end
 
 function M.exec(opts)
-  local result = {}
-
-  opts.on_exit = function(command_result)
-    result = command_result
-  end
-
-  new(opts):start()
-
-  return result
+  local job = new(opts)
+  job:start()
+  job:wait()
+  return get_result(job)
 end
 
 function M.exec_async(opts)

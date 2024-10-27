@@ -16,7 +16,7 @@ local M = {
 --- @param opts? NvimChezmoiConfig | nil
 function M.setup(opts)
   M.opts = vim.tbl_deep_extend("force", M.opts, opts or {})
-  require("nvim-chezmoi.commands").init(M.opts)
+  require("nvim-chezmoi.core.commands").init(M.opts)
   require("telescope").load_extension("nvim-chezmoi")
 end
 

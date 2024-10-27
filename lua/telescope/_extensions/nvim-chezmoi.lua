@@ -13,10 +13,6 @@ local source_files = function(opts)
         results = (function()
           local nvim_chezmoi = require("nvim-chezmoi")
 
-          if nvim_chezmoi.opts == nil then
-            return {}
-          end
-
           local files =
             vim.fn.glob(nvim_chezmoi.opts.source_path .. "/**/*", true, true)
           local file_list = {}
@@ -35,9 +31,34 @@ local source_files = function(opts)
     :find()
 end
 
+local managed = function(opts)
+  opts = opts or {}
+  pickers
+    .new(opts, {
+      prompt_title = "Source Files",
+      finder = finders.new_table({
+        results = (function()
+          local chezmoi = require("nvim-chezmoi.chezmoi")
+          local file_list = chezmoi.get_managed_files()
+          return file_list
+        end)(),
+        entry_maker = function(entry)
+          return {
+            value = entry[2],
+            display = entry[1],
+            ordinal = entry[1],
+          }
+        end,
+      }),
+      sorter = conf.generic_sorter(opts),
+    })
+    :find()
+end
+
 return telescope.register_extension({
   setup = function(user_config, config) end,
   exports = {
+    managed = managed,
     source_files = source_files,
   },
 })

@@ -22,9 +22,16 @@ local autocmd = function(args)
   })
 end
 
-local user_cmd = function(buf, name, desc, callback)
+local buf_user_cmd = function(buf, name, desc, callback)
   vim.api.nvim_buf_create_user_command(buf, name, callback, {
     desc = desc,
+    force = true,
+  })
+end
+
+local user_cmd = function(opts)
+  vim.api.nvim_create_user_command(opts.name, opts.callback, {
+    desc = opts.desc,
     force = true,
   })
 end
@@ -73,7 +80,7 @@ local source_autocmds = function()
       "BufRead",
     },
     callback = function(ev)
-      user_cmd(
+      buf_user_cmd(
         ev.buf,
         "ChezmoiDetectFileType",
         "Detect the filetype for a source file",
@@ -82,7 +89,7 @@ local source_autocmds = function()
         end
       )
 
-      user_cmd(
+      buf_user_cmd(
         ev.buf,
         "ChezmoiExecuteTemplate",
         "Preview the file template",
@@ -96,12 +103,30 @@ local source_autocmds = function()
   })
 end
 
---- Initializes the autocmds and user cmds.
 --- @param opts NvimChezmoiConfig
 function M.init(opts)
   M.config = opts
   log.print_debug = M.config.debug
   source_autocmds()
+end
+
+--- @param opts NvimChezmoiConfig
+function M.telescope()
+  user_cmd({
+    name = "ChezmoiListSource",
+    desc = "Chezmoi files under source directory.",
+    callback = function()
+      vim.cmd("Telescope nvim-chezmoi source_files")
+    end,
+  })
+
+  user_cmd({
+    name = "ChezmoiManaged",
+    desc = "Chezmoi managed files.",
+    callback = function()
+      vim.cmd("Telescope nvim-chezmoi managed")
+    end,
+  })
 end
 
 return M
