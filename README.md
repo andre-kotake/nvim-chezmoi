@@ -65,6 +65,7 @@ The plugin provides the following user commands:
 ### Global
 
 - `:ChezmoiListSource`: List files under the source directory.
+- `:ChezmoiManaged`: List managed files using ```chezmoi managed``` and ```chezmoi source-path```. First execution may be a bit slow because of that, but results are cached to speed it up.
 
 ### Source files only
 

@@ -1,10 +1,10 @@
 [*]
 charset = utf-8
-insert_final_newline = true
+end_of_line = lf
 indent_style = space
 indent_size = 2
-end_of_line = lf
-max_line_length = 80
 
 [*.lua]
+insert_final_newline = true
+max_line_length = 80
 quote_type = double

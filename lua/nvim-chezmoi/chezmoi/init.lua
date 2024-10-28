@@ -7,20 +7,16 @@ local runner = require("nvim-chezmoi.core.runner")
 local utils = require("nvim-chezmoi.core.utils")
 
 --- @class Chezmoi
---- @field source-path string
---- @field target-path string
+--- @field source_path string
+--- @field target_path string
 --- @field managed { [string]: {target:string,ft:string} }
 local M = {
   managed = {},
 }
 
----@param args string[]
 ---@param stdin? string[]
-local function exec(args, stdin)
-  runner.exec({
-    args = args,
-    stdin = stdin or {},
-  })
+local function exec(opts)
+  return runner.exec(opts)
 end
 
 ---@param args string[]
@@ -92,15 +88,55 @@ function M:execute_template(buf, source_file, callback)
 end
 
 function M.get_managed_files()
-  local managed_files = exec({
-    "managed",
-    "--path-style",
-    "source-absolute",
-    "--include",
-    "files",
-    "--exclude",
-    "externals",
+  local result = exec({
+    args = {
+      "managed",
+      "--path-style",
+      "absolute",
+      "--exclude",
+      "externals,dirs,scripts",
+    },
   })
+
+  if not result.success then
+    return {}
+  end
+
+  if M.target_path == nil then
+    local target_path = exec({ args = { "target-path" } })
+    if target_path.success then
+      M.target_path = target_path.data[1]
+    end
+  end
+
+  local managed_files = {}
+
+  for _, target_file in ipairs(result.data) do
+    local source_file = utils.get_source_by_target(M.managed, target_file)
+
+    if source_file == nil then
+      local cmd_data = exec({
+        args = {
+          "source-path",
+          target_file,
+        },
+      })
+
+      if not cmd_data.success then
+        return {}
+      end
+
+      source_file = cmd_data.data[1]
+      M.managed[source_file] = { target = target_file }
+    end
+
+    managed_files[#managed_files + 1] = {
+      utils.strip_path(target_file, M.target_path),
+      source_file,
+    }
+  end
+
+  return managed_files
 end
 
 return M
