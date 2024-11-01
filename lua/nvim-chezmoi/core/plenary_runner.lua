@@ -1,10 +1,9 @@
 local j = require("plenary.job")
 local plenary_filetype = require("plenary.filetype")
 
---- @alias callback_args {code:integer, data:string[]}
---- @alias callback fun(args:callback_args)
+--- @alias callback fun(args:ChezmoiCommandResult)
 
---- @class ChezmoiCommand
+--- @class PlenaryRunner
 --- @field package job Job
 local M = {}
 
@@ -34,7 +33,7 @@ local function new(opts)
     args = opts.args,
     writer = opts.stdin,
     cwd = opts.cwd,
-    on_exit = function(_job, _code)
+    on_exit = function(_job, _)
       -- Execute callback if provided.
       if type(opts.on_exit) == "function" then
         local result = get_result(_job)

@@ -1,210 +1,132 @@
--- Validate if chezmoi exists in PATH
 if vim.fn.executable("chezmoi") == 0 then
   error(debug.traceback("chezmoi executable not found in PATH."))
 end
 
-local runner = require("nvim-chezmoi.core.runner")
-local utils = require("nvim-chezmoi.core.utils")
+local runner = require("nvim-chezmoi.core.plenary_runner")
+local cache = require("nvim-chezmoi.chezmoi.cache")
+local log = require("nvim-chezmoi.core.log")
 
---- @class Chezmoi
---- @field source_path string
---- @field target_path string
---- @field managed { [string]: {target:string,ft:string} }
-local M = {
-  managed = {},
-}
+---Main class for chezmoi command.
+---All command results are cached to speed up future invocations.
+---@class ChezmoiCommand
+local M = {}
 
----@param stdin? string[]
-local function exec(opts)
-  return runner.exec(opts)
-end
+---Result of an executed command
+---@class ChezmoiCommandResult
+---@field success boolean `true` if command returned status code 0.
+---@field data table The result data from command execution or error messages if `success` is `false`.
 
----@param args string[]
----@param stdin? string[]
---- @param on_exit? fun(args: any)
-local function exec_async(args, stdin, on_exit)
-  runner.exec_async({
-    args = args,
-    stdin = stdin or {},
-    on_exit = on_exit,
-  })
-end
+---Executes a chezmoi command and caches the result.
+---If cached result was found, return it instead of executing again, unless `force` is `true`.
+---@param cmd string Command to execute, e.g. "source-path"
+---@param args string[]|nil Additional args to append to `cmd`, e.g. ".bashrc"
+---@param stdin? string[]|nil Stdin if needed for command.
+---@param success_only? boolean Only returns from cache if result was successful.
+---@param force? boolean Force execution ignoring cache.
+---@return ChezmoiCommandResult
+M.exec = function(cmd, args, stdin, success_only, force)
+  local cached
 
-function M:get_target_path(source_file, callback)
-  source_file = utils.fullpath(source_file)
-
-  exec_async({ "target-path", source_file }, nil, function(result)
-    local managed_file = M.managed[source_file]
-
-    if managed_file == nil or managed_file.ft == nil then
-      local target_file = result.data[1]
-
-      -- Try filetype from plenary first
-      local ft = runner.get_filetype(target_file)
-      -- Plenary could't find the filetype, try temp buf
-      if ft == nil or ft == "" then
-        local tmp_buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_name(tmp_buf, target_file)
-        ft = vim.filetype.match({ buf = tmp_buf }) or ""
-        vim.api.nvim_buf_delete(tmp_buf, { force = true })
-      end
-
-      -- Add new filetype
-      vim.filetype.add({
-        filename = {
-          [source_file] = ft,
-        },
-      })
-
-      -- Cache it.
-      M.managed[source_file] = {
-        target = target_file,
-        ft = ft,
-      }
+  if not force or true then
+    if success_only or false then
+      cached = cache.find_success(cmd, args)
+    else
+      cached = cache.find(cmd, args)
     end
 
-    callback(M.managed[source_file])
-  end)
-end
-
-function M:execute_template(buf, source_file, callback)
-  source_file = utils.fullpath(source_file)
-
-  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  exec_async({ "execute-template" }, table.concat(lines, "\n"), function(result)
-    -- Create a new buffer
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    -- Set the buffer as the current one
-    vim.api.nvim_set_current_buf(bufnr)
-    -- Append each line from the array to the buffer
-    for _, line in ipairs(result.data) do
-      vim.api.nvim_buf_set_lines(bufnr, -1, -1, false, { line })
+    if cached ~= nil then
+      return cached.result
     end
-    -- Remove empty first line
-    vim.api.nvim_buf_set_lines(0, 0, 1, false, {})
+  end
 
-    callback(bufnr)
-  end)
-end
+  local cmd_args = { cmd }
+  vim.list_extend(cmd_args, args or {})
 
-function M.get_managed_files()
-  local result = exec({
-    args = {
-      "managed",
-      "--path-style",
-      "absolute",
-      "--exclude",
-      "externals,dirs,scripts",
-    },
+  local result = runner.exec({
+    args = cmd_args,
+    stdin = stdin,
   })
 
   if not result.success then
-    return {}
+    log.warn(result.data)
   end
 
-  if M.target_path == nil then
-    local target_path = exec({ args = { "target-path" } })
-    if target_path.success then
-      M.target_path = target_path.data[1]
+  cache.new(cmd, args, result)
+
+  return result
+end
+
+local function expand_path_arg(args)
+  if args == nil then
+    return nil
+  end
+
+  if #args > 0 then
+    if args[1] ~= nil and string.sub(args[1], 1, 2) ~= "--" then
+      -- The first item is a path
+      args[1] = vim.fn.fnamemodify(vim.fn.expand(args[1]), ":p")
     end
   end
 
-  local managed_files = {}
+  return args
+end
 
-  for _, target_file in ipairs(result.data) do
-    local source_file = utils.get_source_by_target(M.managed, target_file)
+---@param file string
+---@return ChezmoiCommandResult
+M.execute_template = function(file)
+  local get_lines = function(buf_name)
+    local bufnr
 
-    if source_file == nil then
-      local cmd_data = exec({
-        args = {
-          "source-path",
-          target_file,
-        },
-      })
-
-      if not cmd_data.success then
-        return {}
+    for _, buf in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
+      if buf.name == buf_name then
+        bufnr = buf.bufnr
+        return vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
       end
-
-      source_file = cmd_data.data[1]
-      M.managed[source_file] = { target = target_file }
     end
 
-    managed_files[#managed_files + 1] = {
-      utils.strip_path(target_file, M.target_path),
-      source_file,
-    }
+    -- If buffer is not found, create a new scratch buffer
+    bufnr = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_name(bufnr, buf_name)
+
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+
+    return lines
   end
 
-  return managed_files
+  return M.exec("execute-template", {
+    table.concat(get_lines(file), "\n"),
+  }, nil, true)
+end
+
+---@param args? string[]|nil Arguments to append to command.
+---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
+M.managed = function(args)
+  local cmd = "managed"
+  return M.exec(cmd, args, nil, true)
+end
+
+---@param args? string[]|nil Arguments to append to command.
+---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
+M.source_path = function(args)
+  local cmd = "source-path"
+  args = expand_path_arg(args)
+  return M.exec(cmd, args, nil, true)
+end
+
+---@param args? string[]|nil Arguments to append to command.
+---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
+M.target_path = function(args)
+  local cmd = "target-path"
+  args = expand_path_arg(args)
+  return M.exec(cmd, args, nil, true)
+end
+
+---Returns the source path for given `files`
+---@param files string[]
+---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
+M.edit = function(files)
+  return M.source_path(files)
 end
 
 return M
-
----
-
---
--- local utils = require("nvim-chezmoi.core.utils")
--- local runner = require("nvim-chezmoi.core.runner")
---
--- --- @class NvimChezmoi.Chezmoi
--- --- @field source-path string
--- --- @field target-path string
--- --- @field managed_files table<string,string>
--- local M = {}
---
--- --- @param args string[] The arguments to pass to the `chezmoi` command.
--- --- @param on_exit? on_exit
--- local function execute(args, on_exit, callback)
---   command:new(args, on_exit):run()
--- end
---
--- function M.init(on_init)
---   local function getPath(key)
---     return function(code, data)
---       if code == 0 then
---         M[key] = code == 0 and data[1]
---       end
---     end
---   end
---   execute("source-path", getPath("source-path"))
---   execute("target-path", getPath("target-path"))
---
---   runner:new({
---     cmd = "chezmoi",
---     args = "source-path",
---     on_exit = function(result)
---       vim.print(vim.inspect(result.data))
---     end,
---   })
---   return M
--- end
---
--- -- M["source-path"] = "dj"
--- -- M.managed = setmetatable({}, {
--- --   __index = function(t, k)
--- --     vim.notify("index", vim.log.levels.INFO, {})
--- --
--- --     if utils.isChildPath(M["source-path"], k) then
--- --       rawset(t, k, "")
--- --       return t[k]
--- --     end
--- --
--- --     return nil
--- --   end,
--- -- })
---
--- --- @param callback? NvimChezmoi.Core.Runner.Callback
--- function M.managed(callback)
---   execute({ "managed" }, function(code, data)
---     -- for i, v in ipairs(data) do
---     --   cache.managed[v] = tostring(i)
---     -- end
---
---     if callback ~= nil then
---       callback(code, data)
---     end
---   end)
--- end
---
--- return M
