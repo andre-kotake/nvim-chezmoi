@@ -1,32 +1,21 @@
 local telescope = require("telescope")
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
+local actions = require("telescope.actions")
+local action_state = require("telescope.actions.state")
 local conf = require("telescope.config").values
+local plugin_telescope = require("nvim-chezmoi.core.telescope")
 
--- TODO: Refactor this, use the source path or chezmoi managed.
 local source_files = function(opts)
   opts = opts or {}
   pickers
     .new(opts, {
       prompt_title = "Source Files",
       finder = finders.new_table({
-        results = (function()
-          local nvim_chezmoi = require("nvim-chezmoi")
-
-          local files =
-            vim.fn.glob(nvim_chezmoi.opts.source_path .. "/**/*", true, true)
-          local file_list = {}
-
-          for _, file in ipairs(files) do
-            if vim.fn.isdirectory(file) == 0 then
-              table.insert(file_list, file)
-            end
-          end
-
-          return file_list
-        end)(),
+        results = plugin_telescope.source_path(),
       }),
       sorter = conf.generic_sorter(opts),
+      previewer = conf.file_previewer({}),
     })
     :find()
 end
@@ -35,22 +24,31 @@ local managed = function(opts)
   opts = opts or {}
   pickers
     .new(opts, {
-      prompt_title = "Source Files",
+      prompt_title = "Managed Files",
       finder = finders.new_table({
         results = (function()
-          local chezmoi = require("nvim-chezmoi.chezmoi")
-          local file_list = chezmoi.get_managed_files()
-          return file_list
+          return plugin_telescope.managed()
         end)(),
         entry_maker = function(entry)
           return {
-            value = entry[2],
-            display = entry[1],
-            ordinal = entry[1],
+            value = entry,
+            path = entry[2],
+            display = entry[3],
+            ordinal = entry[3],
           }
         end,
       }),
       sorter = conf.generic_sorter(opts),
+      attach_mappings = function(prompt_bufnr, map)
+        actions.select_default:replace(function()
+          actions.close(prompt_bufnr)
+          local source_file = action_state.get_selected_entry().value[2]
+          vim.cmd("edit " .. source_file)
+        end)
+
+        return true
+      end,
+      previewer = conf.file_previewer({}),
     })
     :find()
 end

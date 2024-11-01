@@ -22,6 +22,13 @@ M.isChildPath = function(parent, child)
     and (child:sub(#parent + 1, #parent + 1) == "/" or #child == #parent)
 end
 
+M.table_append = function(t1, t2)
+  for _, v in ipairs(t2) do
+    table.insert(t1, v)
+  end
+  return t1
+end
+
 M.get_source_by_target = function(table, targetValue)
   for key, value in pairs(table) do
     if value.target == targetValue then
