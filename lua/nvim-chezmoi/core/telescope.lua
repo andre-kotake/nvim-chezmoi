@@ -102,8 +102,7 @@ M.chezmoi_files = function()
   local target_files = {}
   local source_path = vim.fn.fnamemodify(vim.fn.expand(result.data[1]), ":p")
 
-  for _, file in ipairs(vim.fn.glob(source_path .. "/**/.*", false, true)) do
-    -- Check if the file is a regular file
+  for _, file in ipairs(vim.fn.glob(source_path .. "/**/.*/**/*", false, true)) do
     if vim.fn.filereadable(file) == 1 then
       file = file:gsub("^" .. source_path .. "/", "")
       vim.list_extend(target_files, {
@@ -112,7 +111,7 @@ M.chezmoi_files = function()
           file,
           _name_resolver.resolvePath(file),
         },
-      }) -- Add the processed file path to the list
+      })
     end
   end
 

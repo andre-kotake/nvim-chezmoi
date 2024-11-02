@@ -13,7 +13,7 @@ end, {
   force = true,
 })
 
-local source_files = function(opts, title, filesFn)
+local source_files_finder = function(opts, title, filesFn)
   opts = opts or {}
   return {
     prompt_title = title,
@@ -25,7 +25,6 @@ local source_files = function(opts, title, filesFn)
       end)(),
       entry_maker = function(entry)
         return {
-
           value = entry,
           path = entry[1] .. "/" .. entry[2],
           display = entry[3],
@@ -43,7 +42,11 @@ local chezmoi_files = function(opts)
       opts,
       vim.tbl_deep_extend(
         "force",
-        source_files(opts, "Chezmoi Files", plugin_telescope.chezmoi_files),
+        source_files_finder(
+          opts,
+          "Chezmoi Files",
+          plugin_telescope.chezmoi_files
+        ),
         {
           attach_mappings = function(prompt_bufnr, map)
             actions.select_default:replace(function()
@@ -65,20 +68,10 @@ local managed = function(opts)
   pickers
     .new(
       opts,
-      vim.tbl_deep_extend(
-        "force",
-        source_files(opts, "Managed Files", plugin_telescope.source_managed),
-        {
-          attach_mappings = function(prompt_bufnr, map)
-            actions.select_default:replace(function()
-              actions.close(prompt_bufnr)
-              local source_file = action_state.get_selected_entry().path
-              vim.cmd("edit " .. source_file)
-            end)
-
-            return true
-          end,
-        }
+      source_files_finder(
+        opts,
+        "Managed Files",
+        plugin_telescope.source_managed
       )
     )
     :find()

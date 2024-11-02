@@ -69,7 +69,7 @@ M.resolvePath = function(file)
   else
     local path_tmp = ""
     for part in pathWithoutSuffixes:gmatch("[^/]+") do
-      path_tmp = M.removeDirectoryPrefixes(part) .. "/"
+      path_tmp = path_tmp .. M.removeDirectoryPrefixes(part) .. "/"
     end
     pathWithoutSuffixes = path_tmp
   end
