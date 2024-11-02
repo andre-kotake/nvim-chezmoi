@@ -6,6 +6,13 @@ local action_state = require("telescope.actions.state")
 local conf = require("telescope.config").values
 local plugin_telescope = require("nvim-chezmoi.core.telescope")
 
+vim.api.nvim_create_user_command("ChezmoiManaged", function()
+  vim.cmd("Telescope nvim-chezmoi managed")
+end, {
+  desc = "Chezmoi managed files",
+  force = true,
+})
+
 local source_files = function(opts)
   opts = opts or {}
   pickers
@@ -27,7 +34,8 @@ local managed = function(opts)
       prompt_title = "Managed Files",
       finder = finders.new_table({
         results = (function()
-          return plugin_telescope.managed()
+          local managed_files = plugin_telescope.managed()
+          return managed_files
         end)(),
         entry_maker = function(entry)
           return {
