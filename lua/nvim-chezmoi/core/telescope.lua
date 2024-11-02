@@ -1,6 +1,8 @@
 local chezmoi = require("nvim-chezmoi.chezmoi")
 local _name_resolver = require("nvim-chezmoi.chezmoi._name_resolver")
 local chezmoi_cache = require("nvim-chezmoi.chezmoi.cache")
+local scan = require("plenary.scandir")
+local path = require("plenary.path")
 
 local M = {}
 
@@ -47,50 +49,28 @@ M.managed = function()
   return source_files
 end
 
-M.source_path = function()
-  local result = chezmoi.source_path()
-  if not result.success then
-    return {}
-  end
-  local files = vim.fn.glob(result.data[1] .. "/**/*", true, true)
-  local file_list = {}
-
-  for _, file in ipairs(files) do
-    if vim.fn.isdirectory(file) == 0 then
-      table.insert(file_list, file)
-    end
-  end
-
-  return file_list
-end
-
-local function get_files(path, glob)
-  local target_files = {}
-  for _, file in ipairs(vim.fn.glob(path .. glob, false, true)) do
-    if vim.fn.filereadable(file) == 1 then
-      file = file:gsub("^" .. path .. "/", "")
-      local resolved_path = _name_resolver.resolvePath(file)
-      target_files[#target_files + 1] = {
-        path,
-        file,
-        resolved_path,
-      }
-    end
-  end
-
-  return target_files
-end
-
 M.source_managed = function()
   local result = chezmoi.source_path()
   if not result.success then
     return {}
   end
 
-  local source_path = vim.fn.fnamemodify(vim.fn.expand(result.data[1]), ":p")
-  local target_files = get_files(source_path, "/**/*")
+  local files = {}
+  local source_path = result.data[1]
+  local chezmoi_files = scan.scan_dir(source_path, {
+    hidden = false,
+  })
 
-  return target_files
+  for _, chezmoi_file in ipairs(chezmoi_files) do
+    local file_path = path:new(chezmoi_file):normalize(source_path)
+    local target_path = _name_resolver.resolvePath(file_path)
+    files[#files + 1] = {
+      chezmoi_file,
+      target_path,
+    }
+  end
+
+  return files
 end
 
 M.chezmoi_files = function()
@@ -99,23 +79,22 @@ M.chezmoi_files = function()
     return {}
   end
 
-  local target_files = {}
-  local source_path = vim.fn.fnamemodify(vim.fn.expand(result.data[1]), ":p")
+  local files = {}
+  local source_path = result.data[1]
+  local chezmoi_files = scan.scan_dir(source_path, {
+    search_pattern = "%.chezmoi*",
+    hidden = true,
+  })
 
-  for _, file in ipairs(vim.fn.glob(source_path .. "/**/.*/**/*", false, true)) do
-    if vim.fn.filereadable(file) == 1 then
-      file = file:gsub("^" .. source_path .. "/", "")
-      vim.list_extend(target_files, {
-        {
-          source_path,
-          file,
-          _name_resolver.resolvePath(file),
-        },
-      })
-    end
+  for _, chezmoi_file in ipairs(chezmoi_files) do
+    local file_path = path:new(chezmoi_file):normalize(source_path)
+    files[#files + 1] = {
+      chezmoi_file,
+      file_path,
+    }
   end
 
-  return target_files
+  return files
 end
 
 return M
