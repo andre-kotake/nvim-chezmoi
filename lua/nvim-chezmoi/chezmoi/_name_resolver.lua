@@ -61,4 +61,26 @@ M.removeDirectoryPrefixes = function(dir)
   return dir
 end
 
+M.resolvePath = function(file)
+  -- Remove suffixes from each folder in the path
+  local pathWithoutSuffixes = vim.fn.fnamemodify(file, ":h")
+  if pathWithoutSuffixes == "." then
+    pathWithoutSuffixes = ""
+  else
+    local path_tmp = ""
+    for part in pathWithoutSuffixes:gmatch("[^/]+") do
+      path_tmp = path_tmp .. M.removeDirectoryPrefixes(part) .. "/"
+    end
+    pathWithoutSuffixes = path_tmp
+  end
+
+  -- Remove the file suffix
+  local filenameWithoutSuffix =
+    M.removeFilePrefixes(vim.fn.fnamemodify(file, ":t")) -- Remove file suffix
+
+  -- Combine the processed path and filename
+  local processedFile = pathWithoutSuffixes .. filenameWithoutSuffix
+  return processedFile
+end
+
 return M

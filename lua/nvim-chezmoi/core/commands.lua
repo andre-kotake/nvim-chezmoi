@@ -63,30 +63,38 @@ local detect_filetype = function(buf)
   end
 
   local target_file = target_file_result.data[1]
-
   -- Try match
   local ft = plenary.get_filetype(target_file)
-  -- Could't find the filetype, try temp buf
+
   if ft == nil or ft == "" then
-    local tmp_buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(tmp_buf, target_file)
-    ft = vim.filetype.match({ buf = tmp_buf }) or ""
-    vim.api.nvim_buf_delete(tmp_buf, { force = true })
+    vim.schedule(function()
+      ft = vim.filetype.match({ filename = target_file })
+
+      -- Could't find the filetype, try temp buf
+      if ft ~= nil and ft ~= "" then
+        local tmp_buf = vim.api.nvim_create_buf(true, true)
+        vim.api.nvim_buf_set_name(tmp_buf, target_file)
+        ft = vim.filetype.match({ buf = tmp_buf })
+        vim.api.nvim_buf_delete(tmp_buf, { force = true })
+      end
+    end)
   end
 
-  set_filetype(ft)
+  if ft ~= nil and ft ~= "" then
+    set_filetype(ft)
 
-  vim.filetype.add({
-    filename = {
-      [file] = ft,
-    },
-  })
+    vim.filetype.add({
+      filename = {
+        [target_file] = ft,
+      },
+    })
 
-  -- Cache it
-  chezmoi_cache.new("ft_detect", { source_file }, {
-    success = true,
-    data = { ft = ft },
-  })
+    -- Cache it
+    chezmoi_cache.new("ft_detect", { source_file }, {
+      success = true,
+      data = { ft = ft },
+    })
+  end
 end
 
 local edit = function(files)
