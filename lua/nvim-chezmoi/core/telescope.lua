@@ -20,10 +20,10 @@ M.managed = function()
   for _, value in ipairs(result.data) do
     local source_file
     local target_file
-    local cached = chezmoi_cache.find("managed_full", { value })
+    local cached = chezmoi_cache.find("managed_full_" .. value, { value })
     if cached ~= nil then
-      source_file = cached.result.data.source
-      target_file = cached.result.data.target
+      source_file = cached.result[2]
+      target_file = cached.result[3]
     else
       local source_path = chezmoi.source_path({ value })
       if source_path.success then
@@ -36,10 +36,10 @@ M.managed = function()
       local data = {
         chezmoi_source_path.data[1],
         source_file,
-        target_file,
+        target_file:gsub("^" .. chezmoi_source_path.data[1] .. "/?", ""),
       }
       source_files[#source_files + 1] = data
-      chezmoi_cache.new("managed_full", { value }, data)
+      chezmoi_cache.new("managed_full_" .. value, { value }, data)
     end
   end
 
