@@ -49,7 +49,7 @@ M.managed = function()
   return source_files
 end
 
-M.source_managed = function()
+M.source_files = function(hidden, pattern)
   local result = chezmoi.source_path()
   if not result.success then
     return {}
@@ -58,32 +58,8 @@ M.source_managed = function()
   local files = {}
   local source_path = result.data[1]
   local chezmoi_files = scan.scan_dir(source_path, {
-    hidden = false,
-  })
-
-  for _, chezmoi_file in ipairs(chezmoi_files) do
-    local file_path = path:new(chezmoi_file):normalize(source_path)
-    local target_path = _name_resolver.resolvePath(file_path)
-    files[#files + 1] = {
-      chezmoi_file,
-      target_path,
-    }
-  end
-
-  return files
-end
-
-M.chezmoi_files = function()
-  local result = chezmoi.source_path()
-  if not result.success then
-    return {}
-  end
-
-  local files = {}
-  local source_path = result.data[1]
-  local chezmoi_files = scan.scan_dir(source_path, {
-    search_pattern = "%.chezmoi*",
-    hidden = true,
+    hidden = hidden or false,
+    search_pattern = pattern,
   })
 
   for _, chezmoi_file in ipairs(chezmoi_files) do
@@ -95,6 +71,19 @@ M.chezmoi_files = function()
   end
 
   return files
+end
+
+M.source_managed = function()
+  local managed_files = M.source_files(false)
+  for i, file in ipairs(managed_files) do
+    local target_path = _name_resolver.resolvePath(file[2])
+    managed_files[i][2] = target_path
+  end
+  return managed_files
+end
+
+M.chezmoi_files = function()
+  return M.source_files(true, "%.chezmoi*")
 end
 
 return M
