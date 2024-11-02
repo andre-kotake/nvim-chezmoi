@@ -60,12 +60,12 @@ Default configuration values for `nvim-chezmoi`:
 
 #### Global
 
-- `:ChezmoiEdit [files...]`: Opens the source file from current buffer target file. You may specify optional `[files]` arguments if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
-- `:ChezmoiManaged`: List managed files using ```chezmoi managed``` and ```chezmoi source-path```. First execution may be a bit slow because of that, but results are cached to speed it up in later executions.
+- `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
+- `:ChezmoiManaged`: List managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim) using ```chezmoi managed``` and ```chezmoi source-path```. First execution may be a bit slow because of that, but results are cached to speed it up in later executions.
 
 #### Source files only
 
-- `:ChezmoiExecuteTemplate`: Opens a non-listed scratch buffer with the executed template for a opened file. Only applies for files with the ".tmpl" extension.
+- `:ChezmoiExecuteTemplate`: Preview the executed template in a new buffer. Only applies for files with the ".tmpl" extension.
 - `:ChezmoiDetectFileType`: Detects the correct filetype for the opened source file. Not really much use since it does it by default whenever you open a file.
 
 ### Autocmds

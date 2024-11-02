@@ -159,12 +159,13 @@ function M.init(opts)
     callback = function(cmd)
       local files
       if #cmd.fargs > 0 then
-        files = cmd.fargs
+        files = { cmd.fargs[1] }
       else
         files = { vim.fn.expand("%:p") }
       end
       edit(files)
     end,
+    nargs = "?",
   })
 end
 
