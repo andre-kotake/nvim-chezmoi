@@ -64,56 +64,58 @@ M.source_path = function()
   return file_list
 end
 
+local function get_files(path, glob)
+  local target_files = {}
+  for _, file in ipairs(vim.fn.glob(path .. glob, false, true)) do
+    if vim.fn.filereadable(file) == 1 then
+      file = file:gsub("^" .. path .. "/", "")
+      local resolved_path = _name_resolver.resolvePath(file)
+      target_files[#target_files + 1] = {
+        path,
+        file,
+        resolved_path,
+      }
+    end
+  end
+
+  return target_files
+end
+
 M.source_managed = function()
   local result = chezmoi.source_path()
   if not result.success then
     return {}
   end
 
-  local files = {}
+  local source_path = vim.fn.fnamemodify(vim.fn.expand(result.data[1]), ":p")
+  local target_files = get_files(source_path, "/**/*")
 
-  -- Remove .chezmoi files and dirs
-  for _, file in ipairs(vim.fn.glob(result.data[1] .. "/*", true, true)) do
-    if not file:match("^%.chezmoi") then
-      vim.list_extend(files, { file })
-    end
+  return target_files
+end
+
+M.chezmoi_files = function()
+  local result = chezmoi.source_path()
+  if not result.success then
+    return {}
   end
 
   local target_files = {}
-  -- Use vim.fn.glob to get a list of files in the directory
   local source_path = vim.fn.fnamemodify(vim.fn.expand(result.data[1]), ":p")
-  for _, file in ipairs(vim.fn.glob(source_path .. "/**/*", false, true)) do
+
+  for _, file in ipairs(vim.fn.glob(source_path .. "/**/.*", false, true)) do
     -- Check if the file is a regular file
     if vim.fn.filereadable(file) == 1 then
       file = file:gsub("^" .. source_path .. "/", "")
-      -- Remove suffixes from each folder in the path
-      local pathWithoutSuffixes = vim.fn.fnamemodify(file, ":h")
-      if pathWithoutSuffixes == "." then
-        pathWithoutSuffixes = ""
-      else
-        local path_tmp = ""
-        for part in pathWithoutSuffixes:gmatch("[^/]+") do
-          path_tmp = _name_resolver.removeDirectoryPrefixes(part) .. "/"
-        end
-        pathWithoutSuffixes = path_tmp
-      end
-
-      -- Remove the file suffix
-      local filenameWithoutSuffix =
-        _name_resolver.removeFilePrefixes(vim.fn.fnamemodify(file, ":t")) -- Remove file suffix
-
-      -- Combine the processed path and filename
-      local processedFile = pathWithoutSuffixes .. filenameWithoutSuffix
       vim.list_extend(target_files, {
         {
           source_path,
           file,
-          processedFile,
+          _name_resolver.resolvePath(file),
         },
       }) -- Add the processed file path to the list
     end
   end
-  vim.print(vim.inspect(target_files))
+
   return target_files
 end
 
