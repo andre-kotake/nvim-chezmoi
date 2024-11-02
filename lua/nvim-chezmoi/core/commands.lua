@@ -108,6 +108,7 @@ end
 
 local execute_template = function(buf)
   local filename = vim.fn.expand("%:p")
+  -- TODO: Some chezmoi files are templates without .tmpl extension
   if not filename:match("%.tmpl$") then
     log.warn("Not a chezmoi template.")
     return
@@ -175,6 +176,22 @@ function M.init(opts)
     end,
     nargs = "?",
   })
+end
+
+M.telescope_init = function()
+  local user_commands = {
+    {
+      name = "ChezmoiManaged",
+      desc = "Chezmoi managed files",
+      callback = function()
+        vim.cmd("Telescope nvim-chezmoi managed")
+      end,
+    },
+  }
+
+  for _, cmd in ipairs(user_commands) do
+    user_cmd(cmd)
+  end
 end
 
 return M

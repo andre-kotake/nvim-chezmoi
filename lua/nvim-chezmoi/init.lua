@@ -22,6 +22,7 @@ function M.setup(opts)
   local telescope_ok, telescope = pcall(require, "telescope")
   if telescope_ok then
     telescope.load_extension("nvim-chezmoi")
+    commands.telescope_init()
   end
 end
 
