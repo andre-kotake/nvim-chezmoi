@@ -34,13 +34,13 @@ local managed = function(opts)
       prompt_title = "Managed Files",
       finder = finders.new_table({
         results = (function()
-          local managed_files = plugin_telescope.managed()
+          local managed_files = plugin_telescope.source_managed()
           return managed_files
         end)(),
         entry_maker = function(entry)
           return {
             value = entry,
-            path = entry[2],
+            path = entry[1] .. "/" .. entry[2],
             display = entry[3],
             ordinal = entry[3],
           }
@@ -50,7 +50,7 @@ local managed = function(opts)
       attach_mappings = function(prompt_bufnr, map)
         actions.select_default:replace(function()
           actions.close(prompt_bufnr)
-          local source_file = action_state.get_selected_entry().value[2]
+          local source_file = action_state.get_selected_entry().path
           vim.cmd("edit " .. source_file)
         end)
 

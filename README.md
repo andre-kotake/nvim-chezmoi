@@ -61,7 +61,7 @@ Default configuration values for `nvim-chezmoi`:
 #### Global
 
 - `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
-- `:ChezmoiManaged`: List managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim) using ```chezmoi managed``` and ```chezmoi source-path```. First execution may be a bit slow because of that, but results are cached to speed it up in later executions.
+- `:ChezmoiManaged`: List managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim).
 
 #### Source files only
 

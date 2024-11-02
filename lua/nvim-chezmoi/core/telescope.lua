@@ -1,4 +1,5 @@
 local chezmoi = require("nvim-chezmoi.chezmoi")
+local _name_resolver = require("nvim-chezmoi.chezmoi._name_resolver")
 local chezmoi_cache = require("nvim-chezmoi.chezmoi.cache")
 
 local M = {}
@@ -61,6 +62,59 @@ M.source_path = function()
   end
 
   return file_list
+end
+
+M.source_managed = function()
+  local result = chezmoi.source_path()
+  if not result.success then
+    return {}
+  end
+
+  local files = {}
+
+  -- Remove .chezmoi files and dirs
+  for _, file in ipairs(vim.fn.glob(result.data[1] .. "/*", true, true)) do
+    if not file:match("^%.chezmoi") then
+      vim.list_extend(files, { file })
+    end
+  end
+
+  local target_files = {}
+  -- Use vim.fn.glob to get a list of files in the directory
+  local source_path = vim.fn.fnamemodify(vim.fn.expand(result.data[1]), ":p")
+  for _, file in ipairs(vim.fn.glob(source_path .. "/**/*", false, true)) do
+    -- Check if the file is a regular file
+    if vim.fn.filereadable(file) == 1 then
+      file = file:gsub("^" .. source_path .. "/", "")
+      -- Remove suffixes from each folder in the path
+      local pathWithoutSuffixes = vim.fn.fnamemodify(file, ":h")
+      if pathWithoutSuffixes == "." then
+        pathWithoutSuffixes = ""
+      else
+        local path_tmp = ""
+        for part in pathWithoutSuffixes:gmatch("[^/]+") do
+          path_tmp = _name_resolver.removeDirectoryPrefixes(part) .. "/"
+        end
+        pathWithoutSuffixes = path_tmp
+      end
+
+      -- Remove the file suffix
+      local filenameWithoutSuffix =
+        _name_resolver.removeFilePrefixes(vim.fn.fnamemodify(file, ":t")) -- Remove file suffix
+
+      -- Combine the processed path and filename
+      local processedFile = pathWithoutSuffixes .. filenameWithoutSuffix
+      vim.list_extend(target_files, {
+        {
+          source_path,
+          file,
+          processedFile,
+        },
+      }) -- Add the processed file path to the list
+    end
+  end
+  vim.print(vim.inspect(target_files))
+  return target_files
 end
 
 return M
