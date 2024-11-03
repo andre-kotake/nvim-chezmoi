@@ -108,6 +108,7 @@ end
 
 local execute_template = function(buf)
   local filename = vim.fn.expand("%:p")
+  -- TODO: Some chezmoi files are templates without .tmpl extension
   if not filename:match("%.tmpl$") then
     log.warn("Not a chezmoi template.")
     return
@@ -141,21 +142,26 @@ function M.init(opts)
       "BufRead",
     },
     callback = function(ev)
-      buf_user_cmd(ev.buf, {
-        name = "ChezmoiDetectFileType",
-        desc = "Detect the filetype for a source file",
-        callback = function()
-          detect_filetype(ev.buf)
-        end,
-      })
+      local user_cmds = {
+        {
+          name = "ChezmoiDetectFileType",
+          desc = "Detect the filetype for a source file",
+          callback = function()
+            detect_filetype(ev.buf)
+          end,
+        },
+        {
+          name = "ChezmoiExecuteTemplate",
+          desc = "Execute template for a source file",
+          callback = function()
+            execute_template(ev.buf)
+          end,
+        },
+      }
 
-      buf_user_cmd(ev.buf, {
-        name = "ChezmoiExecuteTemplate",
-        desc = "Execute template for a source file",
-        callback = function()
-          execute_template(ev.buf)
-        end,
-      })
+      for _, cmd in ipairs(user_cmds) do
+        buf_user_cmd(ev.buf, cmd)
+      end
 
       vim.cmd("ChezmoiDetectFileType")
     end,
@@ -175,6 +181,29 @@ function M.init(opts)
     end,
     nargs = "?",
   })
+end
+
+M.telescope_init = function()
+  local user_commands = {
+    {
+      name = "ChezmoiManaged",
+      desc = "Chezmoi managed files under " .. M.config.source_path,
+      callback = function()
+        vim.cmd("Telescope nvim-chezmoi managed")
+      end,
+    },
+    {
+      name = "ChezmoiFiles",
+      desc = "Chezmoi special files under " .. M.config.source_path,
+      callback = function()
+        vim.cmd("Telescope nvim-chezmoi special_files")
+      end,
+    },
+  }
+
+  for _, cmd in ipairs(user_commands) do
+    user_cmd(cmd)
+  end
 end
 
 return M

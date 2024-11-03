@@ -14,7 +14,7 @@ A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmo
 - Interface for chezmoi commands.
 - Sets the appropriate filetype for a source file based on the target file name.
 - Quickly open a new buffer with the executed template for a source file.
-- Two [telescope](https://github.com/nvim-telescope/telescope.nvim) extension.
+- Two [telescope](https://github.com/nvim-telescope/telescope.nvim) extensions.
 
 ## Installation
 
@@ -60,8 +60,8 @@ Default configuration values for `nvim-chezmoi`:
 
 #### Global
 
-- `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
-- `:ChezmoiManaged`: List managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim).
+- `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. Encrypted files are not supported yet. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
+- `:ChezmoiManaged`: List source managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim).
 
 #### Source files only
 
@@ -76,7 +76,7 @@ Default configuration values for `nvim-chezmoi`:
 
 ### Telescope Extension
 - `:Telescope nvim-chezmoi managed`: Same as `:ChezmoiManaged` user command.
-- `:Telescope nvim-chezmoi source_files`: Lists all files under source path.
+- `:Telescope nvim-chezmoi special_files`: Lists all chezmoi special files under source path.
 
 ## API
 
@@ -105,6 +105,7 @@ Returns a `ChezmoiCommandResult` table with the fields:
 
 ## To do
 
+- Handle encrypted files.
 - Auto apply on save/quit.
 - Refactor Telescope extension.
 
