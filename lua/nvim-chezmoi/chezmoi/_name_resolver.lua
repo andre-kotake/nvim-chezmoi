@@ -19,7 +19,7 @@ local function removePrefixes(prefixes, name)
 end
 
 M.removeFilePrefixes = function(filename)
-  local groups = {
+  filename = removePrefixes({
     "literal_",
     "create_",
     "modify_",
@@ -36,8 +36,7 @@ M.removeFilePrefixes = function(filename)
     "empty_",
     "executable_",
     "dot_",
-  }
-  filename = removePrefixes(groups, filename)
+  }, filename)
 
   if filename:sub(-5) == ".tmpl" then
     filename = filename:sub(1, -6)
@@ -47,18 +46,14 @@ M.removeFilePrefixes = function(filename)
 end
 
 M.removeDirectoryPrefixes = function(dir)
-  local prefixes = {
+  return removePrefixes({
     "remove_",
     "external_",
     "exact_",
     "private_",
     "readonly_",
     "dot_",
-  }
-
-  dir = removePrefixes(prefixes, dir)
-
-  return dir
+  }, dir)
 end
 
 M.resolvePath = function(file)

@@ -6,8 +6,7 @@ local action_state = require("telescope.actions.state")
 local conf = require("telescope.config").values
 local plugin_telescope = require("nvim-chezmoi.core.telescope")
 
-local source_files_finder = function(opts, title, filesFn)
-  opts = opts or {}
+local picker_config_default = function(opts, title, filesFn)
   return {
     prompt_title = title,
     sorter = conf.generic_sorter(opts),
@@ -28,34 +27,24 @@ local source_files_finder = function(opts, title, filesFn)
   }
 end
 
-local chezmoi_files = function(opts)
+local new_picker = function(opts, title, filesFn)
   opts = opts or {}
-  pickers
-    .new(
-      opts,
-      source_files_finder(opts, "Chezmoi Files", plugin_telescope.chezmoi_files)
-    )
-    :find()
+  local picker_config = picker_config_default(opts, title, filesFn)
+  pickers.new(opts, picker_config):find()
+end
+
+local special_files = function(opts)
+  new_picker(opts, "Chezmoi Special Files", plugin_telescope.chezmoi_files)
 end
 
 local managed = function(opts)
-  opts = opts or {}
-  pickers
-    .new(
-      opts,
-      source_files_finder(
-        opts,
-        "Managed Files",
-        plugin_telescope.source_managed
-      )
-    )
-    :find()
+  new_picker(opts, "Managed Files", plugin_telescope.source_managed)
 end
 
 return telescope.register_extension({
   setup = function(user_config, config) end,
   exports = {
     managed = managed,
-    chezmoi_files = chezmoi_files,
+    special_files = special_files,
   },
 })

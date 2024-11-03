@@ -142,21 +142,26 @@ function M.init(opts)
       "BufRead",
     },
     callback = function(ev)
-      buf_user_cmd(ev.buf, {
-        name = "ChezmoiDetectFileType",
-        desc = "Detect the filetype for a source file",
-        callback = function()
-          detect_filetype(ev.buf)
-        end,
-      })
+      local user_cmds = {
+        {
+          name = "ChezmoiDetectFileType",
+          desc = "Detect the filetype for a source file",
+          callback = function()
+            detect_filetype(ev.buf)
+          end,
+        },
+        {
+          name = "ChezmoiExecuteTemplate",
+          desc = "Execute template for a source file",
+          callback = function()
+            execute_template(ev.buf)
+          end,
+        },
+      }
 
-      buf_user_cmd(ev.buf, {
-        name = "ChezmoiExecuteTemplate",
-        desc = "Execute template for a source file",
-        callback = function()
-          execute_template(ev.buf)
-        end,
-      })
+      for _, cmd in ipairs(user_cmds) do
+        buf_user_cmd(ev.buf, cmd)
+      end
 
       vim.cmd("ChezmoiDetectFileType")
     end,
@@ -182,9 +187,16 @@ M.telescope_init = function()
   local user_commands = {
     {
       name = "ChezmoiManaged",
-      desc = "Chezmoi managed files",
+      desc = "Chezmoi managed files under " .. M.config.source_path,
       callback = function()
         vim.cmd("Telescope nvim-chezmoi managed")
+      end,
+    },
+    {
+      name = "ChezmoiFiles",
+      desc = "Chezmoi special files under " .. M.config.source_path,
+      callback = function()
+        vim.cmd("Telescope nvim-chezmoi special_files")
       end,
     },
   }
