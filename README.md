@@ -60,7 +60,7 @@ Default configuration values for `nvim-chezmoi`:
 
 #### Global
 
-- `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
+- `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. Encrypted files are not supported yet. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
 - `:ChezmoiManaged`: List source managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim).
 
 #### Source files only
@@ -105,6 +105,7 @@ Returns a `ChezmoiCommandResult` table with the fields:
 
 ## To do
 
+- Handle encrypted files.
 - Auto apply on save/quit.
 - Refactor Telescope extension.
 
