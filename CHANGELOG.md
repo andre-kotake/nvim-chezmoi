@@ -1,3 +1,10 @@
+## 0.2.0 (2024-11-05)
+
+### Feat
+
+- add config for executed template window
+- open executed template in new window
+
 ## 0.1.0 (2024-11-04)
 
 ### Feat
