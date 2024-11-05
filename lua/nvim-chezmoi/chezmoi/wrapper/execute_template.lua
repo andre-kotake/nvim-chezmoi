@@ -3,12 +3,18 @@ local chezmoi = require("nvim-chezmoi.chezmoi")
 local chezmoi_helper = require("nvim-chezmoi.chezmoi.helper")
 
 ---@class ChezmoiExecuteTemplate: ChezmoiCommandWrapper
-local M = setmetatable({}, {
+---@field opts NvimChezmoiConfig
+local M = setmetatable({ opts = {} }, {
   __index = base,
-  __call = function(self, file)
-    self:exec(file)
+  __call = function(self, opts)
+    self:init(opts)
   end,
 })
+
+---@param opts NvimChezmoiConfig
+function M:init(opts)
+  self.opts = opts
+end
 
 function M:create_buf_user_commands(bufnr)
   local commands = {
@@ -49,21 +55,17 @@ function M:exec(file)
 
       -- Set filetype
       vim.bo[buf].filetype = vim.bo[bufnr].filetype
-      vim.bo[buf].buflisted = false
       vim.bo[buf].buftype = "nofile"
       vim.bo[buf].bufhidden = "wipe"
 
       -- Create window to display it
-      local win = vim.api.nvim_open_win(buf, true, {
-        title = file,
-        relative = "editor",
-        width = vim.o.columns,
-        height = vim.o.lines,
-        row = 0,
-        col = 0,
-        style = "minimal",
-        border = "single",
-      })
+      local win = vim.api.nvim_open_win(
+        buf,
+        true,
+        vim.tbl_deep_extend("force", self.opts.window.execute_template, {
+          title = file,
+        })
+      )
 
       vim.wo[win].number = true
 

@@ -36,7 +36,9 @@ end
 function M.init(opts)
   M.config = opts
   log.print_debug = M.config.debug
+  chezmoi_execute_template(M.config)
 
+  --TODO: Validate if file exists
   autocmd({
     group = "SourcePath",
     pattern = M.config.source_path .. "/*",

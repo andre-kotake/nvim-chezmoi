@@ -18,11 +18,11 @@ end
 ---@return ChezmoiCommandResult|nil|any
 function M:check_result(cmd, cmd_args, callback)
   local cmd_result = cmd(cmd_args)
-  if not cmd_result.success then
-    return cmd_result
+  if cmd_result.success then
+    callback(cmd_result)
   end
 
-  return callback(cmd_result)
+  return cmd_result
 end
 
 function M:create_user_commands(commands)

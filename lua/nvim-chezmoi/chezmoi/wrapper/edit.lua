@@ -2,7 +2,11 @@ local base = require("nvim-chezmoi.chezmoi.wrapper._base")
 local chezmoi = require("nvim-chezmoi.chezmoi")
 local chezmoi_cache = require("nvim-chezmoi.chezmoi.cache")
 local chezmoi_helper = require("nvim-chezmoi.chezmoi.helper")
+local log = require("nvim-chezmoi.core.log")
 local plenary = require("nvim-chezmoi.core.plenary_runner")
+local utils = require("nvim-chezmoi.core.utils")
+
+local _decrypted_sufix = "_decripted"
 
 ---Detects amd sets filetype for `buf` using the target path.
 ---@param buf integer
@@ -15,6 +19,13 @@ local detect_filetype = function(buf)
 
   local file = vim.api.nvim_buf_get_name(buf)
   local source_file = vim.fn.fnamemodify(file, ":p")
+
+  -- remove decrypted sufix
+  if
+    string.match(vim.fn.fnamemodify(source_file, ":t"), _decrypted_sufix .. "$")
+  then
+    source_file = string.gsub(source_file, _decrypted_sufix .. "$", "")
+  end
 
   -- Try cache first
   local cached = chezmoi_cache.find_success("ft_detect", { source_file })
@@ -67,13 +78,18 @@ local detect_filetype = function(buf)
   end
 end
 
----@param self ChezmoiEdit
----@param file string
----@return integer bufnr
-local function edit_encrypted_file(self, file)
-  return self:check_result(chezmoi.decrypt, file, function(result)
-    return chezmoi_helper.create_buf(file, result.data, true, false)
-  end)
+local function encrypted_file_autocmds(bufnr)
+  --TODO: override save
+  vim.api.nvim_create_autocmd({
+    "BufWriteCmd",
+  }, {
+    group = utils.augroup("DecryptedFileSave"),
+    buffer = bufnr,
+    nested = false,
+    callback = function(ev)
+      return false
+    end,
+  })
 end
 
 ---@class ChezmoiEdit: ChezmoiCommandWrapper
@@ -129,15 +145,33 @@ function M:exec(file)
     if result.success then
       file = result.data[1]
       if chezmoi_helper.is_encrypted(file) then
-        local bufnr = edit_encrypted_file(self, file)
-        -- Create the user commands because AutoCmd is not triggering here.
-        self:create_buf_user_commands(bufnr)
+        -- TODO: fix edition for encrypted files
+        if true then
+          log.warn('Use "chezmoi edit" to edit encrypted files.')
+          return
+        end
+
+        local bufnr
+        self:check_result(chezmoi.decrypt, file, function(result)
+          bufnr = chezmoi_helper.create_buf(
+            file .. _decrypted_sufix,
+            result.data,
+            true,
+            false,
+            true
+          )
+
+          encrypted_file_autocmds(bufnr)
+        end)
+
+        if bufnr ~= nil then
+          -- Create the user commands because AutoCmd is not triggering here.
+          self:create_buf_user_commands(result)
+        end
       else
         vim.cmd.edit(file)
       end
     end
-
-    return result
   end)
 end
 

@@ -38,4 +38,8 @@ M.get_source_by_target = function(table, targetValue)
   return nil -- Return nil if the value is not found
 end
 
+M.augroup = function(name)
+  return vim.api.nvim_create_augroup("NvimChezmoi_" .. name, {})
+end
+
 return M

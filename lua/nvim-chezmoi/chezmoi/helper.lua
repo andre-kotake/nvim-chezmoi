@@ -102,18 +102,21 @@ end
 ---@param name string
 ---@return integer bufnr
 M.create_buf = function(name, contents, listed, scratch, focus)
-  local bufnr = vim.fn.bufnr(name, false)
-  if bufnr == -1 then
-    bufnr = vim.api.nvim_create_buf(listed, scratch)
+  local bufexists = vim.fn.bufexists(name)
+  local bufnr
+
+  if bufexists == 0 then
+    bufnr = vim.api.nvim_create_buf(listed or true, scratch or false)
 
     if not scratch then
       vim.api.nvim_buf_set_name(bufnr, name)
     end
 
-    if contents ~= nil then
+    if contents ~= nil and type(contents) == "table" then
       vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, contents)
     end
-  else
+  else -- Buffer already exists, open that instead
+    bufnr = vim.fn.bufnr(name)
     vim.api.nvim_command("buffer " .. bufnr)
   end
 
