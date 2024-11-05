@@ -55,7 +55,7 @@ Default configuration values for `nvim-chezmoi`:
     -- Change this only if your dotfiles live in a different directory.
     source_path = "$HOME/.local/share/chezmoi",
     window = {
-      -- Chamges the layout for executed template window.
+      -- Changes the layout for executed template window.
       execute_template = {
         relative = "editor",
         width = vim.o.columns,
