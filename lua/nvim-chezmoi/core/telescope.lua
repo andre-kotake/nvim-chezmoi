@@ -1,5 +1,5 @@
 local chezmoi = require("nvim-chezmoi.chezmoi")
-local _name_resolver = require("nvim-chezmoi.chezmoi._name_resolver")
+local _name_resolver = require("nvim-chezmoi.chezmoi.helper")
 local scan = require("plenary.scandir")
 local path = require("plenary.path")
 

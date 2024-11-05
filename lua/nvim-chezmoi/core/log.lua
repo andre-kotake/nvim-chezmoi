@@ -18,7 +18,7 @@ local notify = function(message, level)
 end
 
 function T.info(message)
-  notify("[INFO]\n" .. message, vim.log.levels.INFO)
+  notify(message, vim.log.levels.INFO)
 end
 
 function T.debug(message)

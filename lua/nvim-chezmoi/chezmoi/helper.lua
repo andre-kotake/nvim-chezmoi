@@ -1,4 +1,9 @@
+---Auxiliary class to handle chezmoi file names
 local M = {}
+
+M.is_encrypted = function(file)
+  return string.find(vim.fn.fnamemodify(file, ":t"), "^encrypted_") ~= nil
+end
 
 local function removePrefixes(prefixes, name)
   for _, prefix in ipairs(prefixes) do
@@ -76,6 +81,47 @@ M.resolvePath = function(file)
   -- Combine the processed path and filename
   local processedFile = pathWithoutSuffixes .. filenameWithoutSuffix
   return processedFile
+end
+
+M.expand_path_arg = function(args)
+  if args == nil then
+    return nil
+  end
+
+  if #args > 0 then
+    if args[1] ~= nil and string.sub(args[1], 1, 2) ~= "--" then
+      -- The first item is a path
+      args[1] = vim.fn.fnamemodify(vim.fn.expand(args[1]), ":p")
+    end
+  end
+
+  return args
+end
+
+---Creates a new buffer
+---@param name string
+---@return integer bufnr
+M.create_buf = function(name, contents, listed, scratch, focus)
+  local bufnr = vim.fn.bufnr(name, false)
+  if bufnr == -1 then
+    bufnr = vim.api.nvim_create_buf(listed, scratch)
+
+    if not scratch then
+      vim.api.nvim_buf_set_name(bufnr, name)
+    end
+
+    if contents ~= nil then
+      vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, contents)
+    end
+  else
+    vim.api.nvim_command("buffer " .. bufnr)
+  end
+
+  if focus or true then
+    vim.api.nvim_set_current_buf(bufnr)
+  end
+
+  return bufnr
 end
 
 return M

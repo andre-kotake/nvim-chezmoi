@@ -4,6 +4,7 @@ end
 
 local runner = require("nvim-chezmoi.core.plenary_runner")
 local cache = require("nvim-chezmoi.chezmoi.cache")
+local helper = require("nvim-chezmoi.chezmoi.helper")
 local log = require("nvim-chezmoi.core.log")
 
 ---Main class for chezmoi command.
@@ -48,7 +49,7 @@ M.exec = function(cmd, args, stdin, success_only, force)
   })
 
   if not result.success then
-    log.warn(result.data)
+    log.error(result.data)
   end
 
   cache.new(cmd, args, result)
@@ -56,47 +57,26 @@ M.exec = function(cmd, args, stdin, success_only, force)
   return result
 end
 
-local function expand_path_arg(args)
-  if args == nil then
-    return nil
-  end
+---Returns the source path for given `files`
+---@param files string[]
+---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
+M.edit = function(files)
+  return M.source_path(files)
+end
 
-  if #args > 0 then
-    if args[1] ~= nil and string.sub(args[1], 1, 2) ~= "--" then
-      -- The first item is a path
-      args[1] = vim.fn.fnamemodify(vim.fn.expand(args[1]), ":p")
-    end
-  end
-
-  return args
+---@param args string[]
+---@return ChezmoiCommandResult
+M.execute_template = function(args)
+  return M.exec("execute-template", {
+    table.concat(args, "\n"),
+  }, nil, true)
 end
 
 ---@param file string
----@return ChezmoiCommandResult
-M.execute_template = function(file)
-  local get_lines = function(buf_name)
-    local bufnr
-
-    for _, buf in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
-      if buf.name == buf_name then
-        bufnr = buf.bufnr
-        return vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-      end
-    end
-
-    -- If buffer is not found, create a new scratch buffer
-    bufnr = vim.api.nvim_create_buf(true, true)
-    vim.api.nvim_buf_set_name(bufnr, buf_name)
-
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-    vim.api.nvim_buf_delete(bufnr, { force = true })
-
-    return lines
-  end
-
-  return M.exec("execute-template", {
-    table.concat(get_lines(file), "\n"),
-  }, nil, true)
+M.decrypt = function(file)
+  local cmd = "decrypt"
+  local result = M.exec(cmd, { file }, nil, true)
+  return result
 end
 
 ---@param args? string[]|nil Arguments to append to command.
@@ -110,7 +90,7 @@ end
 ---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
 M.source_path = function(args)
   local cmd = "source-path"
-  args = expand_path_arg(args)
+  args = helper.expand_path_arg(args)
   return M.exec(cmd, args, nil, true)
 end
 
@@ -118,15 +98,8 @@ end
 ---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
 M.target_path = function(args)
   local cmd = "target-path"
-  args = expand_path_arg(args)
+  args = helper.expand_path_arg(args)
   return M.exec(cmd, args, nil, true)
-end
-
----Returns the source path for given `files`
----@param files string[]
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.edit = function(files)
-  return M.source_path(files)
 end
 
 return M
