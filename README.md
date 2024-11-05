@@ -13,8 +13,8 @@ A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmo
 
 - Interface for chezmoi commands.
 - Sets the appropriate filetype for a source file based on the target file name.
-- Quickly open a new buffer with the executed template for a source file.
-- Two [telescope](https://github.com/nvim-telescope/telescope.nvim) extensions.
+- Preview the executed template in a new window.
+- [telescope](https://github.com/nvim-telescope/telescope.nvim) extensions for files in source directory.
 
 ## Installation
 
@@ -32,8 +32,11 @@ If you are lazy-loading, disable it for `nvim-chezmoi`.
     lazy = false,
     dependencies = {
       { "nvim-lua/plenary.nvim" },
+      { "nvim-telescope/telescope.nvim" },
     },
-    opts = {},
+    opts = { 
+      -- Your custom config 
+    },
     config = function(_, opts)
       require("nvim-chezmoi").setup(opts)
     end,
@@ -51,6 +54,18 @@ Default configuration values for `nvim-chezmoi`:
     -- Default chezmoi source path.
     -- Change this only if your dotfiles live in a different directory.
     source_path = "$HOME/.local/share/chezmoi",
+    window = {
+      -- Chamges the layout for executed template window.
+      execute_template = {
+        relative = "editor",
+        width = vim.o.columns,
+        height = vim.o.lines,
+        row = 0,
+        col = 0,
+        style = "minimal",
+        border = "single",
+      },
+    },
   }
 ```
 
@@ -62,21 +77,16 @@ Default configuration values for `nvim-chezmoi`:
 
 - `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file. Encrypted files are not supported yet. You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
 - `:ChezmoiManaged`: List source managed files with [telescope](https://github.com/nvim-telescope/telescope.nvim).
+- `:ChezmoiFiles`: List special chezmoi files in source directory with [telescope](https://github.com/nvim-telescope/telescope.nvim).
 
 #### Source files only
 
 - `:ChezmoiExecuteTemplate`: Preview the executed template in a new buffer. Only applies for files with the ".tmpl" extension.
 - `:ChezmoiDetectFileType`: Detects the correct filetype for the opened source file. Not really much use since it does it by default whenever you open a file.
 
-### Autocmds
-
-#### Source files only
-
-- `NvimChezmoi_SourcePath`: Executes `:ChezmoiDetectFileType` for the currently opened file and also provides the user command `:ChezmoiExecuteTemplate`.
-
 ### Telescope Extension
-- `:Telescope nvim-chezmoi managed`: Same as `:ChezmoiManaged` user command.
-- `:Telescope nvim-chezmoi special_files`: Lists all chezmoi special files under source path.
+- `:Telescope nvim-chezmoi managed`: Lists managed files. Same as `:ChezmoiManaged`.
+- `:Telescope nvim-chezmoi special_files`: Lists all chezmoi special files under source directory. Same as `ChezmoiFiles`.
 
 ## API
 
@@ -85,10 +95,13 @@ You may use `nvim-chezmoi.chezmoi.exec` function in order to execute commands an
 ```lua
   local chezmoi = require("nvim-chezmoi.chezmoi")
   local result = chezmoi.exec("managed", {
-    "--path-style relative "
+    "--path-style", 
+    "relative"
   })
   vim.print(vim.inspect(result))
 ```
+
+Only commands that return `stdout` or `stderr` are fully supported.
 
 The parameters for `exec` are:
 
@@ -106,7 +119,7 @@ Returns a `ChezmoiCommandResult` table with the fields:
 ## To do
 
 - Handle encrypted files.
-- Auto apply on save/quit.
+- Auto apply on save/quit and command.
 - Refactor Telescope extension.
 
 ## Acknowledgements

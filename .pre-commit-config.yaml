@@ -1,7 +1,15 @@
 ---
 repos:
-  - repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.20.0
-    hooks:
+  - hooks:
       - id: stylua
         stages: [pre-commit]
+    repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v0.20.0
+
+  - hooks:
+      - id: commitizen
+        stages: [commit-msg]
+      - id: commitizen-branch
+        stages: [push]
+    repo: https://github.com/commitizen-tools/commitizen
+    rev: v3.30.0

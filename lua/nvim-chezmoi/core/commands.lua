@@ -1,5 +1,9 @@
 local log = require("nvim-chezmoi.core.log")
 local chezmoi = require("nvim-chezmoi.chezmoi")
+local chezmoi_helper = require("nvim-chezmoi.chezmoi.helper")
+local chezmoi_edit = require("nvim-chezmoi.chezmoi.wrapper.edit")
+local chezmoi_execute_template =
+  require("nvim-chezmoi.chezmoi.wrapper.execute_template")
 local chezmoi_cache = require("nvim-chezmoi.chezmoi.cache")
 local plenary = require("nvim-chezmoi.core.plenary_runner")
 
@@ -20,13 +24,6 @@ local autocmd = function(args)
   })
 end
 
-local buf_user_cmd = function(buf, opts)
-  vim.api.nvim_buf_create_user_command(buf, opts.name, opts.callback, {
-    desc = opts.desc,
-    force = true,
-  })
-end
-
 local user_cmd = function(opts)
   vim.api.nvim_create_user_command(opts.name, opts.callback, {
     desc = opts.desc,
@@ -35,105 +32,13 @@ local user_cmd = function(opts)
   })
 end
 
-local detect_filetype = function(buf)
-  local set_filetype = vim.schedule_wrap(function(ft)
-    if vim.bo[buf].filetype ~= ft then
-      vim.bo[buf].filetype = ft
-    end
-  end)
-
-  local file = vim.api.nvim_buf_get_name(buf)
-  local source_file = vim.fn.fnamemodify(file, ":p")
-
-  -- Try cache first
-  local cached = chezmoi_cache.find_success("ft_detect", { source_file })
-  if cached ~= nil then
-    local ft = cached.result.data.ft
-    if ft ~= vim.bo[buf].filetype then
-      set_filetype(ft)
-      return
-    end
-  end
-
-  -- Get target path for source file
-  local target_file_result = chezmoi.target_path({ source_file })
-  if not target_file_result.success then
-    log.warn(target_file_result.data)
-    return
-  end
-
-  local target_file = target_file_result.data[1]
-  -- Try match
-  local ft = plenary.get_filetype(target_file)
-
-  if ft == nil or ft == "" then
-    vim.schedule(function()
-      ft = vim.filetype.match({ filename = target_file })
-
-      -- Could't find the filetype, try temp buf
-      if ft ~= nil and ft ~= "" then
-        local tmp_buf = vim.api.nvim_create_buf(true, true)
-        vim.api.nvim_buf_set_name(tmp_buf, target_file)
-        ft = vim.filetype.match({ buf = tmp_buf })
-        vim.api.nvim_buf_delete(tmp_buf, { force = true })
-      end
-    end)
-  end
-
-  if ft ~= nil and ft ~= "" then
-    set_filetype(ft)
-
-    vim.filetype.add({
-      filename = {
-        [target_file] = ft,
-      },
-    })
-
-    -- Cache it
-    chezmoi_cache.new("ft_detect", { source_file }, {
-      success = true,
-      data = { ft = ft },
-    })
-  end
-end
-
-local edit = function(files)
-  local result = chezmoi.edit(files)
-  if result.success then
-    for _, value in ipairs(result.data) do
-      vim.cmd("edit " .. value)
-    end
-  end
-end
-
-local execute_template = function(buf)
-  local filename = vim.fn.expand("%:p")
-  -- TODO: Some chezmoi files are templates without .tmpl extension
-  if not filename:match("%.tmpl$") then
-    log.warn("Not a chezmoi template.")
-    return
-  end
-
-  log.info("Executing template for: " .. filename)
-
-  local result = chezmoi.execute_template(filename)
-  if result.success then
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    for _, line in ipairs(result.data) do
-      vim.api.nvim_buf_set_lines(bufnr, -1, -1, false, { line })
-    end
-    -- Remove empty first line
-    vim.api.nvim_buf_set_lines(bufnr, 0, 1, false, {})
-    vim.bo[bufnr].filetype = vim.bo[buf].filetype
-    vim.api.nvim_set_current_buf(bufnr)
-  end
-end
-
 ---@param opts NvimChezmoiConfig
 function M.init(opts)
   M.config = opts
   log.print_debug = M.config.debug
+  chezmoi_execute_template(M.config)
 
+  --TODO: Validate if file exists
   autocmd({
     group = "SourcePath",
     pattern = M.config.source_path .. "/*",
@@ -142,45 +47,12 @@ function M.init(opts)
       "BufRead",
     },
     callback = function(ev)
-      local user_cmds = {
-        {
-          name = "ChezmoiDetectFileType",
-          desc = "Detect the filetype for a source file",
-          callback = function()
-            detect_filetype(ev.buf)
-          end,
-        },
-        {
-          name = "ChezmoiExecuteTemplate",
-          desc = "Execute template for a source file",
-          callback = function()
-            execute_template(ev.buf)
-          end,
-        },
-      }
-
-      for _, cmd in ipairs(user_cmds) do
-        buf_user_cmd(ev.buf, cmd)
-      end
-
-      vim.cmd("ChezmoiDetectFileType")
+      chezmoi_edit:create_buf_user_commands(ev.buf)
+      chezmoi_execute_template:create_buf_user_commands(ev.buf)
     end,
   })
 
-  user_cmd({
-    name = "ChezmoiEdit",
-    desc = "Edit a chezmoi file.",
-    callback = function(cmd)
-      local files
-      if #cmd.fargs > 0 then
-        files = { cmd.fargs[1] }
-      else
-        files = { vim.fn.expand("%:p") }
-      end
-      edit(files)
-    end,
-    nargs = "?",
-  })
+  chezmoi_edit:create_user_commands()
 end
 
 M.telescope_init = function()
