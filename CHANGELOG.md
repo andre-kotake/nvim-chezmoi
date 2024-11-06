@@ -1,3 +1,13 @@
+## 1.0.0 (2024-11-05)
+
+### BREAKING CHANGE
+
+- chezmoi edit is still prefered, but editing encrypted files is working with gpg.
+
+### Feat
+
+- **edit**: add partial support for encrypted files
+
 ## 0.2.0 (2024-11-05)
 
 ### Feat
