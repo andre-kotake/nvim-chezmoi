@@ -64,6 +64,13 @@ M.edit = function(files)
   return M.source_path(files)
 end
 
+---Will cause issues with user password prompt.
+---@param files string
+---@return ChezmoiCommandResult
+M.encrypt = function(files)
+  return M.exec("encrypt", nil, { files }, true)
+end
+
 ---@param args string[]
 ---@return ChezmoiCommandResult
 M.execute_template = function(args)
@@ -72,7 +79,9 @@ M.execute_template = function(args)
   }, nil, true)
 end
 
+---Will cause issues with user password prompt.
 ---@param file string
+---@return ChezmoiCommandResult
 M.decrypt = function(file)
   local cmd = "decrypt"
   local result = M.exec(cmd, { file }, nil, true)
