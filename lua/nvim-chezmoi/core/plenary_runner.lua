@@ -9,9 +9,9 @@ local M = {}
 
 local function get_result(job)
   local result = job:result()
-  local success = true
+  local success = job.code == 0
 
-  if #result == 0 then
+  if not success then
     -- Error, trim each and join with newline
     local stderr = {}
     for _, v in ipairs(job:stderr_result()) do

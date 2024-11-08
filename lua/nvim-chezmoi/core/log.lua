@@ -9,10 +9,8 @@ local notify = function(message, level)
   vim.schedule(function()
     if type(message) == "string" then
       vim.notify(message, level, { title = "nvim-chezmoi" })
-    else
-      for _, value in ipairs(message) do
-        vim.notify(value, level, { title = "nvim-chezmoi" })
-      end
+    elseif type(message) == "table" then
+      vim.notify(table.concat(message, "\n"), level, { title = "nvim-chezmoi" })
     end
   end)
 end

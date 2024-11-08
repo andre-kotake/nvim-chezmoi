@@ -17,6 +17,71 @@ local M = {}
 ---@field success boolean `true` if command returned status code 0.
 ---@field data table The result data from command execution or error messages if `success` is `false`.
 
+---@alias ChezmoiCmd
+---| '"apply"'
+---| '"execute-template"'
+---| '"source-path"'
+---| '"target-path"'
+
+---@class ChezmoiCmdOpts
+---@field args? string[] Additional args to append to `cmd`, e.g. ".bashrc"
+---@field callback? fun(result: ChezmoiCommandResult): any Callback to execute on success
+---@field force? boolean Force execution ignoring cache always. Default `false`.
+---@field stdin? string[] `stdin` if needed for command.
+---@field success_only? boolean Only returns from cache if result was succesful. Default `false`.
+
+---Executes a chezmoi command and caches the result.
+---If cached result was found, return it instead of executing again, unless `force` is `true`.
+---@param cmd ChezmoiCmd|string Command to execute
+---@param opts ChezmoiCmdOpts
+---@return ChezmoiCommandResult
+M.run = function(cmd, opts)
+  local cached
+  local args = opts.args or {}
+  local force = opts.force or false
+  local callback = opts.callback or nil
+  local stdin = opts.stdin or {}
+  local success_only = opts.success_only or true
+
+  if not force or true then
+    if success_only or false then
+      cached = cache.find_success(cmd, args)
+    else
+      cached = cache.find(cmd, args)
+    end
+
+    if cached ~= nil then
+      if cached.result.success and type(callback) == "function" then
+        callback(cached.result)
+      end
+
+      return cached.result
+    end
+  end
+
+  local cmd_args = { cmd }
+  vim.list_extend(cmd_args, args or {})
+
+  local result = runner.exec({
+    args = cmd_args,
+    stdin = stdin,
+  })
+
+  if not result.success then
+    log.error(result.data)
+  else
+    if type(callback) == "function" then
+      callback(result)
+    end
+  end
+
+  cache.new(cmd, args, result)
+
+  return result
+end
+
+---
+
 ---Executes a chezmoi command and caches the result.
 ---If cached result was found, return it instead of executing again, unless `force` is `true`.
 ---@param cmd string Command to execute, e.g. "source-path"
@@ -62,30 +127,6 @@ end
 ---@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
 M.edit = function(files)
   return M.source_path(files)
-end
-
----Will cause issues with user password prompt.
----@param files string
----@return ChezmoiCommandResult
-M.encrypt = function(files)
-  return M.exec("encrypt", nil, { files }, true)
-end
-
----@param args string[]
----@return ChezmoiCommandResult
-M.execute_template = function(args)
-  return M.exec("execute-template", {
-    table.concat(args, "\n"),
-  }, nil, true)
-end
-
----Will cause issues with user password prompt.
----@param file string
----@return ChezmoiCommandResult
-M.decrypt = function(file)
-  local cmd = "decrypt"
-  local result = M.exec(cmd, { file }, nil, true)
-  return result
 end
 
 ---@param args? string[]|nil Arguments to append to command.

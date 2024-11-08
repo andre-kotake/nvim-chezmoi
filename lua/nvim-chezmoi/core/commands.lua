@@ -2,6 +2,7 @@ local log = require("nvim-chezmoi.core.log")
 local chezmoi = require("nvim-chezmoi.chezmoi")
 local chezmoi_helper = require("nvim-chezmoi.chezmoi.helper")
 local chezmoi_edit = require("nvim-chezmoi.chezmoi.wrapper.edit")
+local chezmoi_apply = require("nvim-chezmoi.chezmoi.wrapper.apply")
 local chezmoi_execute_template =
   require("nvim-chezmoi.chezmoi.wrapper.execute_template")
 local chezmoi_cache = require("nvim-chezmoi.chezmoi.cache")
@@ -48,11 +49,11 @@ function M.init(opts)
     },
     callback = function(ev)
       chezmoi_edit:create_buf_user_commands(ev.buf)
-      chezmoi_execute_template:create_buf_user_commands(ev.buf)
     end,
   })
 
   chezmoi_edit:create_user_commands()
+  chezmoi_apply:create_user_commands()
 end
 
 M.telescope_init = function()
