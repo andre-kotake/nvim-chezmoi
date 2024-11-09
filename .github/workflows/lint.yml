@@ -1,18 +1,15 @@
----
 name: lint
 
-on:
-  [push]
+on: [push]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Stylua
         uses: JohnnyMorganz/stylua-action@v3
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           version: latest
-          token: ${{ secrets.GH_TOKEN }}
           args: --check .
