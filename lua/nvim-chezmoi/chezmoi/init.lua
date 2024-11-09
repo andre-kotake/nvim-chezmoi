@@ -6,10 +6,11 @@ local runner = require("nvim-chezmoi.core.plenary_runner")
 local cache = require("nvim-chezmoi.chezmoi.cache")
 local helper = require("nvim-chezmoi.chezmoi.helper")
 local log = require("nvim-chezmoi.core.log")
+local Job = require("plenary.job")
 
----Main class for chezmoi command.
+---Main class for chezmoi commands.
 ---All command results are cached to speed up future invocations.
----@class ChezmoiCommand
+---@class NvimChezmoiCmd
 local M = {}
 
 ---Result of an executed command
@@ -17,16 +18,31 @@ local M = {}
 ---@field success boolean `true` if command returned status code 0.
 ---@field data table The result data from command execution or error messages if `success` is `false`.
 
+---@alias ChezmoiCmd
+---| '"apply"'
+---| '"execute-template"'
+---| '"source-path"'
+---| '"target-path"'
+
+---@class ChezmoiCmdOpts
+---@field args? string[] Additional args to append to `cmd`, e.g. ".bashrc"
+---@field callback? fun(result: ChezmoiCommandResult): any Callback to execute on success
+---@field force? boolean Force execution ignoring cache always. Default `false`.
+---@field stdin? string[] `stdin` if needed for command.
+---@field success_only? boolean Only returns from cache if result was succesful. Default `false`.
+
 ---Executes a chezmoi command and caches the result.
 ---If cached result was found, return it instead of executing again, unless `force` is `true`.
----@param cmd string Command to execute, e.g. "source-path"
----@param args string[]|nil Additional args to append to `cmd`, e.g. ".bashrc"
----@param stdin? string[]|nil Stdin if needed for command.
----@param success_only? boolean Only returns from cache if result was successful.
----@param force? boolean Force execution ignoring cache.
+---@param cmd ChezmoiCmd|string Command to execute
+---@param opts ChezmoiCmdOpts
 ---@return ChezmoiCommandResult
-M.exec = function(cmd, args, stdin, success_only, force)
+M.run = function(cmd, opts)
   local cached
+  local args = opts.args or {}
+  local force = opts.force or false
+  local callback = opts.callback or nil
+  local stdin = opts.stdin or {}
+  local success_only = opts.success_only or true
 
   if not force or true then
     if success_only or false then
@@ -36,6 +52,10 @@ M.exec = function(cmd, args, stdin, success_only, force)
     end
 
     if cached ~= nil then
+      if cached.result.success and type(callback) == "function" then
+        callback(cached.result)
+      end
+
       return cached.result
     end
   end
@@ -50,6 +70,10 @@ M.exec = function(cmd, args, stdin, success_only, force)
 
   if not result.success then
     log.error(result.data)
+  else
+    if type(callback) == "function" then
+      callback(result)
+    end
   end
 
   cache.new(cmd, args, result)
@@ -57,58 +81,44 @@ M.exec = function(cmd, args, stdin, success_only, force)
   return result
 end
 
----Returns the source path for given `files`
----@param files string[]
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.edit = function(files)
-  return M.source_path(files)
+---@param job Job
+local function get_result(job)
+  local result = job:result()
+  local success = job.code == 0
+
+  if not success then
+    -- Error, trim each and join with newline
+    local stderr = {}
+    for _, v in ipairs(job:stderr_result()) do
+      stderr[#stderr + 1] = v:gsub("^%s*(.-)%s*$", "%1")
+    end
+    result = { table.concat(stderr, "\n") }
+    success = false
+  end
+
+  return {
+    success = success,
+    data = result,
+  }
 end
 
----Will cause issues with user password prompt.
----@param files string
----@return ChezmoiCommandResult
-M.encrypt = function(files)
-  return M.exec("encrypt", nil, { files }, true)
-end
+---@param cmd ChezmoiCmd|string Command to execute
+---@param opts ChezmoiCmdOpts Opts for command
+M.runAsync = function(cmd, opts)
+  local args = { cmd }
+  table.insert(args, opts.args or {})
 
----@param args string[]
----@return ChezmoiCommandResult
-M.execute_template = function(args)
-  return M.exec("execute-template", {
-    table.concat(args, "\n"),
-  }, nil, true)
-end
-
----Will cause issues with user password prompt.
----@param file string
----@return ChezmoiCommandResult
-M.decrypt = function(file)
-  local cmd = "decrypt"
-  local result = M.exec(cmd, { file }, nil, true)
-  return result
-end
-
----@param args? string[]|nil Arguments to append to command.
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.managed = function(args)
-  local cmd = "managed"
-  return M.exec(cmd, args, nil, true)
-end
-
----@param args? string[]|nil Arguments to append to command.
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.source_path = function(args)
-  local cmd = "source-path"
-  args = helper.expand_path_arg(args)
-  return M.exec(cmd, args, nil, true)
-end
-
----@param args? string[]|nil Arguments to append to command.
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.target_path = function(args)
-  local cmd = "target-path"
-  args = helper.expand_path_arg(args)
-  return M.exec(cmd, args, nil, true)
+  Job:new({
+    command = "chezmoi",
+    args = args,
+    writer = opts.stdin,
+    on_exit = function(_job, _)
+      if type(opts.callback) == "function" then
+        local result = get_result(_job)
+        vim.schedule_wrap(opts.callback)(result)
+      end
+    end,
+  }):sync()
 end
 
 return M

@@ -1,8 +1,25 @@
+local log = require("nvim-chezmoi.core.log")
+
 ---Auxiliary class to handle chezmoi file names
 local M = {}
 
+-- Decrypt/Encrypt
+M._decrypted_sufix = "_decripted"
+
 M.is_encrypted = function(file)
   return string.find(vim.fn.fnamemodify(file, ":t"), "^encrypted_") ~= nil
+end
+
+M.get_decrypted_path = function(file)
+  local head = vim.fn.fnamemodify(file, ":h")
+  local tail = vim.fn.fnamemodify(file, ":t")
+  -- Create temp buf for editing the decrypted file
+  return head .. "/" .. "." .. tail .. M._decrypted_sufix
+end
+M.get_encrypted_path = function(decrypted_path)
+  local head = vim.fn.fnamemodify(decrypted_path, ":h")
+  local tail = vim.fn.fnamemodify(decrypted_path, ":t")
+  return head .. "/" .. tail:gsub("^%.", ""):gsub(M._decrypted_sufix .. "$", "")
 end
 
 local function removePrefixes(prefixes, name)
@@ -122,6 +139,10 @@ M.create_buf = function(name, contents, listed, scratch, focus)
 
   if focus or true then
     vim.api.nvim_set_current_buf(bufnr)
+  end
+
+  if bufnr == -1 then
+    log.error("Could not create buffer: " .. name)
   end
 
   return bufnr
