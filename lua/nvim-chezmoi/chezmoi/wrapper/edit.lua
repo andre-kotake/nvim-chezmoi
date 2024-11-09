@@ -108,7 +108,9 @@ function M:detect_filetype(buf)
   end
 
   -- Get target path for source file
-  local target_file_result = chezmoi.target_path({ source_file })
+  local target_file_result = chezmoi.run("target-path", {
+    args = { source_file },
+  })
   if not target_file_result.success then
     return
   end
