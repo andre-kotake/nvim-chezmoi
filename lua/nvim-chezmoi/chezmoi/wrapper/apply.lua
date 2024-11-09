@@ -13,7 +13,7 @@ function M:create_user_commands()
   base.create_user_commands({
     {
       name = "ChezmoiApply",
-      desc = "Applies chezmoi files. Accepts optional file args.",
+      desc = "Applies chezmoi files. Accepts optional files arguments.",
       callback = function(cmd)
         local files = {}
         if #cmd.args > 0 then

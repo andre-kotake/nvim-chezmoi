@@ -6,10 +6,11 @@ local runner = require("nvim-chezmoi.core.plenary_runner")
 local cache = require("nvim-chezmoi.chezmoi.cache")
 local helper = require("nvim-chezmoi.chezmoi.helper")
 local log = require("nvim-chezmoi.core.log")
+local Job = require("plenary.job")
 
----Main class for chezmoi command.
+---Main class for chezmoi commands.
 ---All command results are cached to speed up future invocations.
----@class ChezmoiCommand
+---@class NvimChezmoiCmd
 local M = {}
 
 ---Result of an executed command
@@ -80,76 +81,44 @@ M.run = function(cmd, opts)
   return result
 end
 
----
+---@param job Job
+local function get_result(job)
+  local result = job:result()
+  local success = job.code == 0
 
----Executes a chezmoi command and caches the result.
----If cached result was found, return it instead of executing again, unless `force` is `true`.
----@param cmd string Command to execute, e.g. "source-path"
----@param args string[]|nil Additional args to append to `cmd`, e.g. ".bashrc"
----@param stdin? string[]|nil Stdin if needed for command.
----@param success_only? boolean Only returns from cache if result was successful.
----@param force? boolean Force execution ignoring cache.
----@return ChezmoiCommandResult
-M.exec = function(cmd, args, stdin, success_only, force)
-  local cached
-
-  if not force or true then
-    if success_only or false then
-      cached = cache.find_success(cmd, args)
-    else
-      cached = cache.find(cmd, args)
+  if not success then
+    -- Error, trim each and join with newline
+    local stderr = {}
+    for _, v in ipairs(job:stderr_result()) do
+      stderr[#stderr + 1] = v:gsub("^%s*(.-)%s*$", "%1")
     end
-
-    if cached ~= nil then
-      return cached.result
-    end
+    result = { table.concat(stderr, "\n") }
+    success = false
   end
 
-  local cmd_args = { cmd }
-  vim.list_extend(cmd_args, args or {})
-
-  local result = runner.exec({
-    args = cmd_args,
-    stdin = stdin,
-  })
-
-  if not result.success then
-    log.error(result.data)
-  end
-
-  cache.new(cmd, args, result)
-
-  return result
+  return {
+    success = success,
+    data = result,
+  }
 end
 
----Returns the source path for given `files`
----@param files string[]
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.edit = function(files)
-  return M.source_path(files)
-end
+---@param cmd ChezmoiCmd|string Command to execute
+---@param opts ChezmoiCmdOpts Opts for command
+M.runAsync = function(cmd, opts)
+  local args = { cmd }
+  table.insert(args, opts.args or {})
 
----@param args? string[]|nil Arguments to append to command.
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.managed = function(args)
-  local cmd = "managed"
-  return M.exec(cmd, args, nil, true)
-end
-
----@param args? string[]|nil Arguments to append to command.
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.source_path = function(args)
-  local cmd = "source-path"
-  args = helper.expand_path_arg(args)
-  return M.exec(cmd, args, nil, true)
-end
-
----@param args? string[]|nil Arguments to append to command.
----@return ChezmoiCommandResult ChezmoiCommandResult where `data` is a string containing the path or the error message.
-M.target_path = function(args)
-  local cmd = "target-path"
-  args = helper.expand_path_arg(args)
-  return M.exec(cmd, args, nil, true)
+  Job:new({
+    command = "chezmoi",
+    args = args,
+    writer = opts.stdin,
+    on_exit = function(_job, _)
+      if type(opts.callback) == "function" then
+        local result = get_result(_job)
+        vim.schedule_wrap(opts.callback)(result)
+      end
+    end,
+  }):sync()
 end
 
 return M
