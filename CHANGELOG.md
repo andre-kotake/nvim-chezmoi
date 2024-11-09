@@ -1,3 +1,13 @@
+## 1.1.0 (2024-11-09)
+
+### Feat
+
+- add apply command
+
+### Refactor
+
+- update docs and remove unused code
+
 ## 1.0.0 (2024-11-05)
 
 ### BREAKING CHANGE
