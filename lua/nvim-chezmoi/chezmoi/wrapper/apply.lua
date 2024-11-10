@@ -13,12 +13,13 @@ function M:create_user_commands()
   base.create_user_commands({
     {
       name = "ChezmoiApply",
-      desc = "Applies chezmoi files. Accepts optional files arguments.",
+      desc = "Applies current chezmoi file. Accepts optional files arguments.",
       callback = function(cmd)
         local files = {}
         if #cmd.args > 0 then
           files = cmd.fargs
-          -- else file = { vim.fn.expand("%:p") }
+        else
+          files = { vim.fn.expand("%:p") }
         end
         M:exec(files)
       end,

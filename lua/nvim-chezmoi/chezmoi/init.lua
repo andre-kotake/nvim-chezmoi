@@ -13,6 +13,27 @@ local Job = require("plenary.job")
 ---@class NvimChezmoiCmd
 local M = {}
 
+---@param job Job
+local function get_result(job)
+  local result = job:result()
+  local success = job.code == 0
+
+  if not success then
+    -- Error, trim each and join with newline
+    local stderr = {}
+    for _, v in ipairs(job:stderr_result()) do
+      stderr[#stderr + 1] = v:gsub("^%s*(.-)%s*$", "%1")
+    end
+    result = { table.concat(stderr, "\n") }
+    success = false
+  end
+
+  return {
+    success = success,
+    data = result,
+  }
+end
+
 ---Result of an executed command
 ---@class ChezmoiCommandResult
 ---@field success boolean `true` if command returned status code 0.
@@ -21,6 +42,7 @@ local M = {}
 ---@alias ChezmoiCmd
 ---| '"apply"'
 ---| '"execute-template"'
+---| '"managed"'
 ---| '"source-path"'
 ---| '"target-path"'
 
@@ -81,34 +103,18 @@ M.run = function(cmd, opts)
   return result
 end
 
----@param job Job
-local function get_result(job)
-  local result = job:result()
-  local success = job.code == 0
+---@class ChezmoiCommandOpts
+---@field args? string[] Additional args to append to `cmd`, e.g. ".bashrc"
+---@field callback? fun(result: ChezmoiCommandResult): any Callback to execute on success
+---@field stdin? string[] `stdin` if needed for command.
 
-  if not success then
-    -- Error, trim each and join with newline
-    local stderr = {}
-    for _, v in ipairs(job:stderr_result()) do
-      stderr[#stderr + 1] = v:gsub("^%s*(.-)%s*$", "%1")
-    end
-    result = { table.concat(stderr, "\n") }
-    success = false
-  end
-
-  return {
-    success = success,
-    data = result,
-  }
-end
-
----@param cmd ChezmoiCmd|string Command to execute
----@param opts ChezmoiCmdOpts Opts for command
-M.runAsync = function(cmd, opts)
+---@param cmd ChezmoiCmd|string Command to execute.
+---@param opts ChezmoiCommandOpts Opts for command
+M.newJob = function(cmd, opts)
   local args = { cmd }
   table.insert(args, opts.args or {})
 
-  Job:new({
+  return Job:new({
     command = "chezmoi",
     args = args,
     writer = opts.stdin,
@@ -118,7 +124,21 @@ M.runAsync = function(cmd, opts)
         vim.schedule_wrap(opts.callback)(result)
       end
     end,
-  }):sync()
+  })
+end
+
+---@param cmd ChezmoiCmd|string Command to execute
+---@param opts ChezmoiCommandOpts Opts for command
+M.runAsync = function(cmd, opts)
+  local job = M.newJob(cmd, opts)
+  job:sync()
+end
+
+---@param cmd ChezmoiCmd|string Command to execute
+---@param opts ChezmoiCommandOpts Opts for command
+M.start = function(cmd, opts)
+  local job = M.newJob(cmd, opts)
+  job:start()
 end
 
 return M

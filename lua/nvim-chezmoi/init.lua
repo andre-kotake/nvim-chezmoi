@@ -34,12 +34,14 @@ function M.setup(opts)
     local chezmoi_apply = require("nvim-chezmoi.chezmoi.wrapper.apply")
     local chezmoi_exec_tmpl =
       require("nvim-chezmoi.chezmoi.wrapper.execute_template")
+    local chezmoi_managed = require("nvim-chezmoi.chezmoi.wrapper.managed")
     local utils = require("nvim-chezmoi.core.utils")
 
     -- Create autocmds and cmds
     chezmoi_exec_tmpl:init(M.opts)
     chezmoi_edit:create_user_commands()
     chezmoi_apply:create_user_commands()
+    chezmoi_managed:create_user_commands()
 
     vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
       group = utils.augroup("SourcePath"),

@@ -10,7 +10,7 @@ local M = {}
 local function get_result(job)
   local result = job:result()
   local success = job.code == 0
-
+  vim.print(vim.inspect(job:stderr_result()))
   if not success then
     -- Error, trim each and join with newline
     local stderr = {}
