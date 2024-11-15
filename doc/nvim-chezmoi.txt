@@ -1,4 +1,4 @@
-*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 November 09
+*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 November 15
 
 ==============================================================================
 Table of Contents                             *nvim-chezmoi-table-of-contents*
@@ -9,7 +9,6 @@ Table of Contents                             *nvim-chezmoi-table-of-contents*
   - Installation                      |nvim-chezmoi-nvim-chezmoi-installation|
   - Configuration                    |nvim-chezmoi-nvim-chezmoi-configuration|
   - Usage                                    |nvim-chezmoi-nvim-chezmoi-usage|
-  - API                                        |nvim-chezmoi-nvim-chezmoi-api|
   - To do                                    |nvim-chezmoi-nvim-chezmoi-to-do|
   - Acknowledgements              |nvim-chezmoi-nvim-chezmoi-acknowledgements|
   - Contributing                      |nvim-chezmoi-nvim-chezmoi-contributing|
@@ -119,59 +118,6 @@ TELESCOPE EXTENSION
 
 - `:Telescope nvim-chezmoi managed`: Lists managed files. Same as `:ChezmoiManaged`.
 - `:Telescope nvim-chezmoi special_files`: Lists all chezmoi special files under source directory. Same as `ChezmoiFiles`.
-
-
-API                                            *nvim-chezmoi-nvim-chezmoi-api*
-
-
-NVIM-CHEZMOI.CHEZMOI ~
-
-
-RUN
-
-You may use `nvim-chezmoi.chezmoi.run` function in order to execute commands
-and provide custom functionality.
-
->lua
-      local chezmoi = require("nvim-chezmoi.chezmoi")
-      local result = chezmoi.run("managed", {
-        args = {
-          "--path-style", 
-          "relative"
-        },
-      })
-      vim.print(vim.inspect(result))
-<
-
-Only commands that return `stdout` or `stderr` are fully supported.
-
-The parameters for `exec` are:
-
-- `cmd (string)`: Command to execute, e.g. "source-path"
-- `opts (ChezmoiCmdOpts)`: Additional opts for command execution.
-
-Returns a `ChezmoiCommandResult`.
-
-
-CHEZMOICMDOPTS
-
->lua
-    ---@class ChezmoiCmdOpts
-    ---@field args? string[] Additional args to append to `cmd`, e.g. ".bashrc"
-    ---@field callback? fun(result: ChezmoiCommandResult): any Callback to execute on success
-    ---@field force? boolean Force execution ignoring cache always. Default `false`.
-    ---@field stdin? string[] `stdin` if needed for command.
-<
-
-
-CHEZMOICOMMANDRESULT
-
->lua
-    ---Result of an executed command
-    ---@class ChezmoiCommandResult
-    ---@field success boolean `true` if command returned status code 0.
-    ---@field data table The result data from command execution or error messages if `success` is `false`.
-<
 
 
 TO DO                                        *nvim-chezmoi-nvim-chezmoi-to-do*
