@@ -1,5 +1,4 @@
 local chezmoi = require("nvim-chezmoi.chezmoi")
-local _name_resolver = require("nvim-chezmoi.chezmoi.helper")
 local scan = require("plenary.scandir")
 local path = require("plenary.path")
 
@@ -34,10 +33,18 @@ M.source_files = function(opts)
 end
 
 M.source_managed = function()
-  return M.source_files({
-    hidden = false,
-    pathResolveFn = _name_resolver.resolvePath,
-  })
+  local chezmoi_managed = require("nvim-chezmoi.chezmoi.commands.managed")
+  local files = chezmoi_managed:exec()
+  local managed_files = {}
+  if files.success then
+    for _, v in pairs(files.data) do
+      managed_files[#managed_files + 1] = {
+        v.sourceAbsolute,
+        v.relative,
+      }
+    end
+  end
+  return managed_files
 end
 
 M.chezmoi_files = function()

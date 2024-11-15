@@ -104,15 +104,15 @@ M.run = function(cmd, opts)
 end
 
 ---@class ChezmoiCommandOpts
----@field args? string[] Additional args to append to `cmd`, e.g. ".bashrc"
----@field callback? fun(result: ChezmoiCommandResult): any Callback to execute on success
+---@field args? string[] Additional args to append to `cmd`.
+---@field callback? fun(result: ChezmoiCommandResult): any Callback to execute on exit.
 ---@field stdin? string[] `stdin` if needed for command.
 
 ---@param cmd ChezmoiCmd|string Command to execute.
 ---@param opts ChezmoiCommandOpts Opts for command
 M.newJob = function(cmd, opts)
   local args = { cmd }
-  table.insert(args, opts.args or {})
+  vim.list_extend(args, opts.args or {})
 
   return Job:new({
     command = "chezmoi",
@@ -139,6 +139,7 @@ end
 M.start = function(cmd, opts)
   local job = M.newJob(cmd, opts)
   job:start()
+  return get_result(job)
 end
 
 return M

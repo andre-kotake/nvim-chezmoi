@@ -30,18 +30,16 @@ function M.setup(opts)
   M.opts = vim.tbl_deep_extend("force", M.opts, opts or {})
 
   local setup_plugin = function()
-    local chezmoi_edit = require("nvim-chezmoi.chezmoi.wrapper.edit")
-    local chezmoi_apply = require("nvim-chezmoi.chezmoi.wrapper.apply")
+    local chezmoi_edit = require("nvim-chezmoi.chezmoi.commands.edit")
+    local chezmoi_apply = require("nvim-chezmoi.chezmoi.commands.apply")
     local chezmoi_exec_tmpl =
-      require("nvim-chezmoi.chezmoi.wrapper.execute_template")
-    local chezmoi_managed = require("nvim-chezmoi.chezmoi.wrapper.managed")
+      require("nvim-chezmoi.chezmoi.commands.execute_template")
     local utils = require("nvim-chezmoi.core.utils")
 
     -- Create autocmds and cmds
     chezmoi_exec_tmpl:init(M.opts)
     chezmoi_edit:create_user_commands()
     chezmoi_apply:create_user_commands()
-    chezmoi_managed:create_user_commands()
 
     vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
       group = utils.augroup("SourcePath"),
@@ -66,7 +64,7 @@ function M.setup(opts)
 
         -- Create buf user commands for already opened source file buffer.
         local utils = require("nvim-chezmoi.core.utils")
-        local chezmoi_edit = require("nvim-chezmoi.chezmoi.wrapper.edit")
+        local chezmoi_edit = require("nvim-chezmoi.chezmoi.commands.edit")
         for _, buf in ipairs(vim.fn.getbufinfo({ buf = "buflisted" })) do
           -- Get the file name of the buffer (bufname is under the `bufname` field)
           local file_path = vim.fn.bufname(buf.bufnr)
@@ -96,18 +94,10 @@ function M.telescope_init()
   end
 
   telescope.load_extension("nvim-chezmoi")
+  local chezmoi_managed = require("nvim-chezmoi.chezmoi.commands.managed")
+  chezmoi_managed:create_user_commands()
 
   local user_commands = {
-    {
-      name = "ChezmoiManaged",
-      callback = function()
-        vim.cmd("Telescope nvim-chezmoi managed")
-      end,
-      opts = {
-        desc = "Chezmoi managed files under source path",
-        nargs = 0,
-      },
-    },
     {
       name = "ChezmoiFiles",
       callback = function()

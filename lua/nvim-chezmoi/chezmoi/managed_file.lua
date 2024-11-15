@@ -1,20 +1,26 @@
 ---@class ChezmoiManagedFile
 ---@field absolute string
 ---@field relative string
----@field targetPath string
 ---@field sourceAbsolute string
 ---@field sourceRelative string
----@field sourcePath string
 local M = {}
 M.__index = M
 
-function M.new(absolute, relative, source_absolute, source_relative)
-  local self = setmetatable({}, M)
-  self.absolute = absolute
-  self.relative = relative
-  self.sourceAbsolute = source_absolute
-  self.sourceRelative = source_relative
-  return self
+---@class ChezmoiManagedFileNewArgs
+---@field absolute string
+---@field relative string
+---@field sourceAbsolute string
+---@field sourceRelative string
+
+---@param args ChezmoiManagedFileNewArgs
+---@return ChezmoiManagedFile
+function M:new(args)
+  local instance = setmetatable({}, self)
+  instance.absolute = args.absolute
+  instance.relative = args.relative
+  instance.sourceAbsolute = args.sourceAbsolute
+  instance.sourceRelative = args.sourceRelative
+  return instance
 end
 
 function M:isEncrypted()
@@ -24,6 +30,8 @@ function M:isEncrypted()
   ) ~= nil
 end
 
-function M:isTemplate() end
+function M:isTemplate()
+  return vim.fn.fnamemodify(self.sourceAbsolute, ":t"):match("%.tmpl") ~= nil
+end
 
 return M
