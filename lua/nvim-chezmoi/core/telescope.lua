@@ -1,17 +1,25 @@
-local chezmoi = require("nvim-chezmoi.chezmoi")
 local scan = require("plenary.scandir")
 local path = require("plenary.path")
 
+---@class NvimChezmoiTelescope
+---@field source_path string
 local M = {}
 
+M.init = function(source_path)
+  M.source_path = source_path
+end
+
 M.source_files = function(opts)
-  local result = chezmoi.source_path()
-  if not result.success then
-    return {}
+  local files = {}
+
+  if type(M.source_path) ~= "string" then
+    local result = require("nvim-chezmoi.chezmoi.commands.source_path"):exec()
+    if result.success then
+      M.source_path = result.data[1]
+    end
   end
 
-  local files = {}
-  local source_path = result.data[1]
+  local source_path = M.source_path
   local chezmoi_files = scan.scan_dir(source_path, {
     hidden = opts.hidden or false,
     search_pattern = opts.pattern,

@@ -28,13 +28,14 @@ function M:create_autocmds(args)
   end
 end
 
+---@param args? string|table
 ---@return ChezmoiUserCommand[]
-function M:userCommands()
+function M:userCommands(args)
   error(debug.traceback("bufUserCommands not implemented."))
 end
 
-function M:create_user_commands()
-  local commands = self:userCommands()
+function M:create_user_commands(args)
+  local commands = self:userCommands(args)
   for _, cmd in pairs(commands) do
     vim.api.nvim_create_user_command(
       cmd.name,
@@ -97,27 +98,45 @@ end
 
 ---@param self ChezmoiCommand
 ---@param args string[]
-local function newJob(self, args)
+---@param stdin? string[]
+local function newJob(self, args, stdin)
   vim.list_extend(args, self.args)
   args = vim.list_extend({ self.cmd }, args)
   return Job:new({
     command = "chezmoi",
     args = args,
+    writer = stdin,
   })
 end
 
 ---@param args? string[]
+---@param stdin? string[]
 ---@return ChezmoiCommandResult
-function M:exec(args)
-  local job = newJob(self, args or {})
-  job:sync()
-  local result = getJobResult(job)
+function M:exec(args, stdin)
+  local job = newJob(self, args or {}, stdin or {})
+  job:sync(60000)
 
+  local result = getJobResult(job)
   if not result.success then
     log.error(result.data)
   end
 
   return result
+end
+
+---@param args? string[]
+---@param callback? fun(result: ChezmoiCommandResult)
+function M:async(args, callback)
+  local job = newJob(self, args or {})
+  if type(callback) == "function" then
+    job:add_on_exit_callback(function(j)
+      vim.schedule(function()
+        callback(getJobResult(j))
+      end)
+    end)
+  end
+
+  job:start()
 end
 
 return M

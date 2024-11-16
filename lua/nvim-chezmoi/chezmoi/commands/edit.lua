@@ -17,7 +17,7 @@ local M = setmetatable({
 ---@param bufnr integer
 ---@return ChezmoiUserCommand[]
 function M:bufUserCommands(bufnr)
-  local commands = {
+  return {
     {
       name = "ChezmoiDetectFiletype",
       desc = "Detects filetype for a source file based on the target file name.",
@@ -26,16 +26,6 @@ function M:bufUserCommands(bufnr)
       end,
     },
   }
-
-  vim.tbl_deep_extend(
-    "force",
-    commands,
-    chezmoi_execute_template:bufUserCommands(bufnr)
-  )
-
-  self:detect_filetype(bufnr)
-
-  return commands
 end
 
 ---@return ChezmoiUserCommand[]
@@ -77,9 +67,13 @@ function M:exec(file)
     vim.schedule(function()
       local decrypt_result = chezmoi_decrypt:exec(file)
       if decrypt_result.success then
-        self:create_buf_user_commands(decrypt_result.data[1])
+        local bufnr = decrypt_result.data[1]
+        if bufnr ~= -1 then
+          self:create_buf_user_commands(bufnr)
+          self:detect_filetype(bufnr)
+          log.warn("Consider using `chezmoi edit` instead.")
+        end
       end
-      log.warn("Consider using `chezmoi edit` instead.")
     end)
   else
     vim.cmd.edit(file)
@@ -98,9 +92,9 @@ function M:detect_filetype(buf)
   local file = vim.api.nvim_buf_get_name(buf)
   local source_file = vim.fn.fnamemodify(file, ":p")
 
-  -- remove decrypted sufix and leading dot
-  if string.match(source_file, chezmoi_helper._decrypted_sufix .. "$") then
-    source_file = chezmoi_helper.get_encrypted_path(source_file)
+  local ok, s = pcall(vim.api.nvim_buf_get_var, buf, "encrypted_source_path")
+  if ok then
+    source_file = s
   end
 
   -- Try cache first

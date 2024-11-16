@@ -1,3 +1,18 @@
+## 2.0.0 (2024-11-16)
+
+### BREAKING CHANGE
+
+- Changes the API for commands
+
+### Feat
+
+- refactor commands
+- add new managed command
+
+### Fix
+
+- fix telescope extension for chezmoi files
+
 ## 1.1.1 (2024-11-09)
 
 ### Fix
