@@ -9,6 +9,8 @@ local M = setmetatable({
     "all",
     "--format",
     "yaml",
+    "--exclude",
+    "dirs,externals,scripts",
   },
 }, {
   __index = command,
