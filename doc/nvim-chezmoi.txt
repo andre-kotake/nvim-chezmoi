@@ -1,4 +1,4 @@
-*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 November 15
+*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 November 16
 
 ==============================================================================
 Table of Contents                             *nvim-chezmoi-table-of-contents*
