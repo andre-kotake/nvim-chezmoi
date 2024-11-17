@@ -17,13 +17,29 @@ local picker_config_default = function(opts, title, filesFn)
       end)(),
       entry_maker = function(entry)
         return {
-          value = entry[1],
-          path = entry[1],
-          display = entry[2],
-          ordinal = entry[2],
+          value = entry,
+          path = entry.file,
+          display = entry.display,
+          ordinal = entry.display,
         }
       end,
     }),
+    attach_mappings = function(prompt_bufnr, map)
+      actions.select_default:replace(function()
+        actions.close(prompt_bufnr)
+        local selection = action_state.get_selected_entry()
+        local value = selection.value
+        if value.isEncrypted then
+          require("nvim-chezmoi.chezmoi.commands.edit"):exec(
+            selection.value.target_file
+          )
+          return
+        end
+
+        vim.cmd.edit(selection.path)
+      end)
+      return true
+    end,
   }
 end
 
