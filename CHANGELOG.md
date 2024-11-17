@@ -1,3 +1,9 @@
+## 2.0.1 (2024-11-16)
+
+### Refactor
+
+- simplify initialization code
+
 ## 2.0.0 (2024-11-16)
 
 ### BREAKING CHANGE
