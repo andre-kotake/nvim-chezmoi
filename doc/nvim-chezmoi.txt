@@ -1,4 +1,4 @@
-*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 November 17
+*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 December 03
 
 ==============================================================================
 Table of Contents                             *nvim-chezmoi-table-of-contents*
@@ -77,6 +77,10 @@ Default configuration values for `nvim-chezmoi`:
         -- chezmoi source path. Defaults to the result of `chezmoi source-path`
         -- Change this only if your dotfiles live in a different directory.
         source_path = nil,
+        edit = {
+          -- Automatically apply file on save. Can be one of: "auto", "confirm" or "never"
+          apply_on_save = "never",
+        },
         window = {
           -- Changes the layout for executed template window.
           execute_template = {
@@ -122,7 +126,6 @@ TELESCOPE EXTENSION
 
 TO DO                                        *nvim-chezmoi-nvim-chezmoi-to-do*
 
-- Auto apply on save/quit.
 - Refactor Telescope extension.
 
 
