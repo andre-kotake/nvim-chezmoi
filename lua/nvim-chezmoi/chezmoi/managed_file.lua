@@ -16,10 +16,17 @@ M.__index = M
 ---@return ChezmoiManagedFile
 function M:new(args)
   local instance = setmetatable({}, self)
-  instance.absolute = args.absolute
-  instance.relative = args.relative
-  instance.sourceAbsolute = args.sourceAbsolute
-  instance.sourceRelative = args.sourceRelative
+  local try_set = function(k, v)
+    if v then
+      instance[k] = v
+    end
+  end
+
+  try_set("absolute", args.absolute)
+  try_set("relative", args.relative)
+  try_set("sourceAbsolute", args.sourceAbsolute)
+  try_set("sourceRelative", args.sourceRelative)
+
   return instance
 end
 

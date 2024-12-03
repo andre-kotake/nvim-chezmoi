@@ -1,3 +1,9 @@
+## 2.1.0 (2024-12-03)
+
+### Feat
+
+- add auto apply on save option
+
 ## 2.0.1 (2024-11-16)
 
 ### Refactor

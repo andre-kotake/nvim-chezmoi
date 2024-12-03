@@ -14,6 +14,63 @@ local M = setmetatable({
   __index = command,
 })
 
+function M:init(opts)
+  self.opts = opts
+  self:create_user_commands()
+end
+
+function M:on_edit(bufnr)
+  chezmoi_execute_template:create_buf_user_commands(bufnr)
+
+  self:create_buf_user_commands(bufnr)
+  self:detect_filetype(bufnr)
+  if
+    type(self.opts.edit.apply_on_save) ~= nil
+    and self.opts.edit.apply_on_save ~= "never"
+  then
+    self:create_autocmds(bufnr)
+  end
+end
+
+---@return ChezmoiAutoCommand[]
+function M:autoCommands(bufnr)
+  return {
+    {
+      event = "BufWritePost",
+      opts = {
+        group = "ApplyOnSave",
+        buffer = bufnr,
+        callback = function(ev)
+          local apply = function()
+            local result =
+              require("nvim-chezmoi.chezmoi.commands.target_path"):exec({
+                ev.file,
+              })
+            if
+              result.success
+              and require("nvim-chezmoi.chezmoi.commands.apply"):exec({
+                result.data[1],
+              }).success
+            then
+              log.info("Applied " .. result.data[1])
+            end
+          end
+
+          if self.opts.edit.apply_on_save == "confirm" then
+            local choice =
+              vim.fn.confirm("Apply " .. ev.file .. "?", "&Yes\n&No", 2)
+            if choice == 1 then
+              apply()
+            end
+          elseif self.opts.edit.apply_on_save == "auto" then
+            apply()
+          end
+        end,
+      },
+    },
+  }
+end
+
 ---@param bufnr integer
 ---@return ChezmoiUserCommand[]
 function M:bufUserCommands(bufnr)
@@ -69,8 +126,7 @@ function M:exec(file)
       if decrypt_result.success then
         local bufnr = decrypt_result.data[1]
         if bufnr ~= -1 then
-          self:create_buf_user_commands(bufnr)
-          self:detect_filetype(bufnr)
+          self:on_edit(bufnr)
           log.warn("Consider using `chezmoi edit` instead.")
         end
       end
@@ -89,8 +145,18 @@ function M:detect_filetype(buf)
     end
   end)
 
-  local file = vim.api.nvim_buf_get_name(buf)
-  local source_file = vim.fn.fnamemodify(file, ":p")
+  local source_file = vim.api.nvim_buf_get_name(buf)
+
+  if vim.fn.fnamemodify(source_file, ":e") == "tmpl" then
+    local filetype = vim.filetype.match({
+      filename = vim.fn.fnamemodify(source_file, ":t"),
+    })
+
+    if filetype ~= "template" then
+      set_filetype(filetype)
+      return
+    end
+  end
 
   local ok, s = pcall(vim.api.nvim_buf_get_var, buf, "encrypted_source_path")
   if ok then
@@ -114,20 +180,21 @@ function M:detect_filetype(buf)
   if not target_file_result.success then
     return
   end
-  --
+
   local target_file = target_file_result.data[1]
+
   -- Try match
   local ft = plenary_filetype.detect(target_file, {})
   if ft == nil or ft == "" then
     ft = vim.filetype.match({ filename = target_file }) or ""
+  end
 
-    -- Could't find the filetype, try temp buf
-    if ft == nil or ft == "" then
-      local tmp_buf = vim.api.nvim_create_buf(true, true)
-      vim.api.nvim_buf_set_name(tmp_buf, target_file)
-      ft = vim.filetype.match({ buf = tmp_buf }) or ""
-      vim.api.nvim_buf_delete(tmp_buf, { force = true })
-    end
+  -- Could't find the filetype, try temp buf
+  if ft == nil or ft == "" then
+    local tmp_buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_name(tmp_buf, target_file)
+    ft = vim.filetype.match({ buf = tmp_buf }) or ""
+    vim.api.nvim_buf_delete(tmp_buf, { force = true })
   end
 
   if ft ~= nil and ft ~= "" then
@@ -135,12 +202,13 @@ function M:detect_filetype(buf)
 
     vim.filetype.add({
       filename = {
-        [target_file] = ft,
+        [vim.fn.fnamemodify(source_file, ":t")] = ft,
       },
     })
 
     -- Cache it
     chezmoi_cache.new("ft_detect", { source_file }, {
+      args = {},
       success = true,
       data = { ft = ft },
     })
