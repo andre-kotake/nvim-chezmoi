@@ -39,8 +39,6 @@ local M = {
 }
 
 local setup_plugin = function()
-  require("nvim-chezmoi.chezmoi"):setup()
-
   local chezmoi_edit = require("nvim-chezmoi.chezmoi.commands.edit")
   local chezmoi_apply = require("nvim-chezmoi.chezmoi.commands.apply")
   local chezmoi_exec_tmpl =
