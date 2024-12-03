@@ -52,6 +52,10 @@ Default configuration values for `nvim-chezmoi`:
     -- chezmoi source path. Defaults to the result of `chezmoi source-path`
     -- Change this only if your dotfiles live in a different directory.
     source_path = nil,
+    edit = {
+      -- Automatically apply file on save. Can be one of: "auto", "confirm" or "never"
+      apply_on_save = "never",
+    },
     window = {
       -- Changes the layout for executed template window.
       execute_template = {
@@ -91,7 +95,6 @@ Encrypted files have partial supported. Tested and working fine for gpg encrypti
 
 ## To do
 
-- Auto apply on save/quit.
 - Refactor Telescope extension.
 
 ## Acknowledgements

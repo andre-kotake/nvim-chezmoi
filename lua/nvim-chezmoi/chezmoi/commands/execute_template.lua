@@ -50,6 +50,10 @@ function M:exec(file)
     return result
   end
 
+  if self.opts.open_in == "split" or self.opts.open_in == "vsplit" then
+    vim.cmd(self.opts.open_in)
+  end
+
   -- Create buf for executed template
   local buf = chezmoi_helper.create_buf(
     file .. "_executed_template",
@@ -64,15 +68,17 @@ function M:exec(file)
   vim.bo[buf].buftype = "nofile"
   vim.bo[buf].bufhidden = "wipe"
 
-  -- Create window to display it
-  local win = vim.api.nvim_open_win(
-    buf,
-    true,
-    vim.tbl_deep_extend("force", self.opts.window.execute_template, {
-      title = file,
-    })
-  )
-  vim.wo[win].number = true
+  if self.opts.open_in == "window" then
+    -- Create window to display it
+    local win = vim.api.nvim_open_win(
+      buf,
+      true,
+      vim.tbl_deep_extend("force", self.opts.window, {
+        title = file,
+      })
+    )
+    vim.wo[win].number = true
+  end
 
   -- Set keymaps
   local keymaps = {

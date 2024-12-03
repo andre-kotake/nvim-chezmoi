@@ -1,18 +1,31 @@
----Plugin configuration
+---@alias NvimChezmoiApplyOpt
+---| '"auto"'
+---| '"confirm"'
+---| '"never"'
+
+---@alias NvimChezmoiExecTemplateOpt
+---| '"window"'
+---| '"split"'
+---| '"vsplit"'
+
 ---@class NvimChezmoiConfig
 ---@field debug boolean
 ---@field source_path string|nil
----@field window {execute_template: vim.api.keyset.win_config}
+---@field edit {apply_on_save: boolean|NvimChezmoiApplyOpt}
+---@field execute_template {open_in: NvimChezmoiExecTemplateOpt, window: vim.api.keyset.win_config}
 
----Main plugin class
 ---@class NvimChezmoi
 ---@field opts NvimChezmoiConfig
 local M = {
   opts = {
     debug = false,
     source_path = nil,
-    window = {
-      execute_template = {
+    edit = {
+      apply_on_save = "confirm",
+    },
+    execute_template = {
+      open_in = "vsplit",
+      window = {
         relative = "editor",
         width = vim.o.columns,
         height = vim.o.lines,
@@ -26,6 +39,8 @@ local M = {
 }
 
 local setup_plugin = function()
+  require("nvim-chezmoi.chezmoi"):setup()
+
   local chezmoi_edit = require("nvim-chezmoi.chezmoi.commands.edit")
   local chezmoi_apply = require("nvim-chezmoi.chezmoi.commands.apply")
   local chezmoi_exec_tmpl =
@@ -33,7 +48,8 @@ local setup_plugin = function()
   local utils = require("nvim-chezmoi.core.utils")
 
   -- Create autocmds and cmds
-  chezmoi_exec_tmpl:init(M.opts)
+  chezmoi_exec_tmpl:init(M.opts.execute_template)
+  chezmoi_edit:init(M.opts)
   chezmoi_edit:create_user_commands()
   chezmoi_apply:create_user_commands()
 
@@ -41,9 +57,7 @@ local setup_plugin = function()
     group = utils.augroup("SourcePath"),
     pattern = M.opts.source_path .. "/*",
     callback = function(ev)
-      chezmoi_exec_tmpl:create_buf_user_commands(ev.buf)
-      chezmoi_edit:create_buf_user_commands(ev.buf)
-      chezmoi_edit:detect_filetype(ev.buf)
+      chezmoi_edit:on_edit(ev.buf)
     end,
   })
 
