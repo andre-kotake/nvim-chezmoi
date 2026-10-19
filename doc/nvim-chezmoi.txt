@@ -1,4 +1,5 @@
-*nvim-chezmoi.txt*        For NVIM v0.8.0        Last change: 2024 December 03
+*nvim-chezmoi.txt*
+                               For NVIM v0.8.0    Last change: 2026 October 19
 
 ==============================================================================
 Table of Contents                             *nvim-chezmoi-table-of-contents*
@@ -40,6 +41,9 @@ FEATURES                                  *nvim-chezmoi-nvim-chezmoi-features*
 
 INSTALLATION                          *nvim-chezmoi-nvim-chezmoi-installation*
 
+New v2 announcement!
+<https://github.com/andre-kotake/nvim-chezmoi/discussions/29>
+
 First, ensure that chezmoi is in your PATH <https://www.chezmoi.io/install/>.
 
 Then, install `nvim-chezmoi` with your favorite plugin manager. You’ll need
@@ -56,8 +60,8 @@ WITH LAZY.NVIM ~
           { "nvim-lua/plenary.nvim" },
           { "nvim-telescope/telescope.nvim" },
         },
-        opts = { 
-          -- Your custom config 
+        opts = {
+          -- Your custom config
         },
         config = function(_, opts)
           require("nvim-chezmoi").setup(opts)
