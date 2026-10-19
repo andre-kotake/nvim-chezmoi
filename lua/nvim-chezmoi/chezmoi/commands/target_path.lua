@@ -2,9 +2,9 @@ local command = require("nvim-chezmoi.chezmoi.command")
 
 ---@class ChezmoiTargetPath:ChezmoiCommand
 local M = setmetatable({
-  cmd = "target-path",
+    cmd = "target-path",
 }, {
-  __index = command,
+    __index = command,
 })
 
 return M
