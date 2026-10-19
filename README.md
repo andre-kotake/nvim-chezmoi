@@ -19,6 +19,8 @@ A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmo
 
 ## Installation
 
+[New v2 announcement!](https://github.com/andre-kotake/nvim-chezmoi/discussions/29)
+
 First, ensure that [chezmoi is in your PATH](https://www.chezmoi.io/install/).
 
 Then, install `nvim-chezmoi` with your favorite plugin manager. You'll need both [plenary](https://github.com/nvim-lua/plenary.nvim/) and [telescope](https://github.com/nvim-telescope/telescope.nvim) installed too.
