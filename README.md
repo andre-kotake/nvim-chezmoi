@@ -16,6 +16,12 @@ A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmo
 - Apply all files or specified ones.
 - Picker integration (via [snacks.nvim](https://github.com/folke/snacks.nvim)) for browsing managed and special chezmoi files.
 
+## Migration
+
+> [!WARNING] 
+> **Breaking changes on "main":** The "main" branch introduces changes that are not backward-compatible with version "1.0.0". 
+> If you need the legacy implementation (with Telescope and Plenary), use the [Version 1.0.0](https://github.com/andre-kotake/nvim-chezmoi/tree/1.0.0).
+
 ## Installation
 
 First, ensure that [chezmoi is in your PATH](https://www.chezmoi.io/install/).
@@ -89,11 +95,6 @@ Default configuration values for `nvim-chezmoi`:
 ## To do
 
 - Implement async-variants of all command modules
-- Merge features in [my Neovim config](https://github.com/103sbavert/nvim-config/tree/main/lua/config/plugins/chezmoi) built atop this plugin into the plugin directly:
-  - Notifications and progress spinners
-  - Exit inhibiting if a job is in progress
-  - Auto-detection
-  - Live template preview
 
 ## Acknowledgements
 
@@ -102,12 +103,17 @@ Stuff that helped me or inspired this:
 - [chezmoi](https://www.chezmoi.io/)
 - [plenary](https://github.com/nvim-lua/plenary.nvim/)
 - [snacks.nvim](https://github.com/folke/snacks.nvim)
-- [andre-kotake/nvim-chezmoi](https://github.com/andre-kotake/nvim-chezmoi) (fork of)
 
 For cool alternatives:
 
 - [alker0/chezmoi.vim](https://github.com/alker0/chezmoi.vim)
 - [xvzc/chezmoi.nvim](https://github.com/xvzc/chezmoi.nvim)
+
+## Contributors
+
+A huge thanks to:
+
+- [103sbavert](https://github.com/103sbavert) for the bug fixes and improvements to this project.
 
 ## Contributing
 
