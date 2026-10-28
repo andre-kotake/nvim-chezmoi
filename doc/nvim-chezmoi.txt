@@ -1,5 +1,5 @@
 *nvim-chezmoi.txt*
-                               For NVIM v0.8.0    Last change: 2026 October 19
+                               For NVIM v0.8.0    Last change: 2026 October 28
 
 ==============================================================================
 Table of Contents                             *nvim-chezmoi-table-of-contents*
@@ -7,11 +7,13 @@ Table of Contents                             *nvim-chezmoi-table-of-contents*
 1. nvim-chezmoi                                    |nvim-chezmoi-nvim-chezmoi|
   - Requirements                      |nvim-chezmoi-nvim-chezmoi-requirements|
   - Features                              |nvim-chezmoi-nvim-chezmoi-features|
+  - Migration                            |nvim-chezmoi-nvim-chezmoi-migration|
   - Installation                      |nvim-chezmoi-nvim-chezmoi-installation|
   - Configuration                    |nvim-chezmoi-nvim-chezmoi-configuration|
   - Usage                                    |nvim-chezmoi-nvim-chezmoi-usage|
   - To do                                    |nvim-chezmoi-nvim-chezmoi-to-do|
   - Acknowledgements              |nvim-chezmoi-nvim-chezmoi-acknowledgements|
+  - Contributors                      |nvim-chezmoi-nvim-chezmoi-contributors|
   - Contributing                      |nvim-chezmoi-nvim-chezmoi-contributing|
   - License                                |nvim-chezmoi-nvim-chezmoi-license|
 
@@ -24,10 +26,9 @@ A NeoVim plugin written in Lua that integrates with chezmoi
 
 REQUIREMENTS                          *nvim-chezmoi-nvim-chezmoi-requirements*
 
-- Neovim
+- Neovim 0.10+ (uses `vim.system`)
 - chezmoi <https://www.chezmoi.io/>
-- plenary.nvim <https://github.com/nvim-lua/plenary.nvim/>
-- telescope.nvim <https://github.com/nvim-telescope/telescope.nvim>
+- snacks.nvim <https://github.com/folke/snacks.nvim>
 
 
 FEATURES                                  *nvim-chezmoi-nvim-chezmoi-features*
@@ -36,8 +37,16 @@ FEATURES                                  *nvim-chezmoi-nvim-chezmoi-features*
 - Sets the appropriate filetype for a source file based on the target file name.
 - Preview the executed template in a new window.
 - Apply all files or specified ones.
-- telescope <https://github.com/nvim-telescope/telescope.nvim> extensions for files in source directory.
+- Picker integration (via snacks.nvim <https://github.com/folke/snacks.nvim>) for browsing managed and special chezmoi files.
 
+
+MIGRATION                                *nvim-chezmoi-nvim-chezmoi-migration*
+
+
+  [!WARNING] **Breaking changes on “main”:** The "main" branch introduces
+  changes that are not backward-compatible with version "1.0.0". If you need the
+  legacy implementation (with Telescope and Plenary), use the Version 1.0.0
+  <https://github.com/andre-kotake/nvim-chezmoi/tree/1.0.0>.
 
 INSTALLATION                          *nvim-chezmoi-nvim-chezmoi-installation*
 
@@ -47,8 +56,7 @@ New v2 announcement!
 First, ensure that chezmoi is in your PATH <https://www.chezmoi.io/install/>.
 
 Then, install `nvim-chezmoi` with your favorite plugin manager. You’ll need
-both plenary <https://github.com/nvim-lua/plenary.nvim/> and telescope
-<https://github.com/nvim-telescope/telescope.nvim> installed too.
+snacks.nvim <https://github.com/folke/snacks.nvim> installed too.
 
 
 WITH LAZY.NVIM ~
@@ -57,8 +65,7 @@ WITH LAZY.NVIM ~
       return {
         "andre-kotake/nvim-chezmoi",
         dependencies = {
-          { "nvim-lua/plenary.nvim" },
-          { "nvim-telescope/telescope.nvim" },
+          { "folke/snacks.nvim" },
         },
         opts = {
           -- Your custom config
@@ -112,8 +119,8 @@ GLOBAL
 - `:ChezmoiApply [file...]`: Applies changes to source files. You may specify optional `file` args to apply them only.
 - `:ChezmoiEdit [file...]`: Opens the source file from current buffer target file.You may specify optional `[file]` argument if you want to open that instead. Example: `:ChezmoiEdit ~/.bashrc`
     Encrypted files have partial supported. Tested and working fine for gpg encryption as long as you have `args: ["--quiet"]` in your chezmoi <https://www.chezmoi.io/> configuration.
-- `:ChezmoiManaged`: List source managed files with telescope <https://github.com/nvim-telescope/telescope.nvim>.
-- `:ChezmoiFiles`: List special chezmoi files in source directory with telescope <https://github.com/nvim-telescope/telescope.nvim>.
+- `:ChezmoiManaged`: List source managed files via Snacks.picker. Shows a diff preview of pending changes for each file.
+- `:ChezmoiFiles`: List special chezmoi files (`.chezmoi*`) in the source directory via Snacks.picker.
 
 
 SOURCE FILES ONLY
@@ -122,15 +129,9 @@ SOURCE FILES ONLY
 - `:ChezmoiDetectFileType`: Detects the correct filetype for the opened source file. Not really much use since it does it by default whenever you open a file.
 
 
-TELESCOPE EXTENSION
-
-- `:Telescope nvim-chezmoi managed`: Lists managed files. Same as `:ChezmoiManaged`.
-- `:Telescope nvim-chezmoi special_files`: Lists all chezmoi special files under source directory. Same as `ChezmoiFiles`.
-
-
 TO DO                                        *nvim-chezmoi-nvim-chezmoi-to-do*
 
-- Refactor Telescope extension.
+- Implement async-variants of all command modules
 
 
 ACKNOWLEDGEMENTS                  *nvim-chezmoi-nvim-chezmoi-acknowledgements*
@@ -139,12 +140,19 @@ Stuff that helped me or inspired this:
 
 - chezmoi <https://www.chezmoi.io/>
 - plenary <https://github.com/nvim-lua/plenary.nvim/>
-- telescope.nvim <https://github.com/nvim-telescope/telescope.nvim>
+- snacks.nvim <https://github.com/folke/snacks.nvim>
 
 For cool alternatives:
 
 - alker0/chezmoi.vim <https://github.com/alker0/chezmoi.vim>
 - xvzc/chezmoi.nvim <https://github.com/xvzc/chezmoi.nvim>
+
+
+CONTRIBUTORS                          *nvim-chezmoi-nvim-chezmoi-contributors*
+
+A huge thanks to:
+
+- 103sbavert <https://github.com/103sbavert> for the bug fixes and improvements to this project.
 
 
 CONTRIBUTING                          *nvim-chezmoi-nvim-chezmoi-contributing*
