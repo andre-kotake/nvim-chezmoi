@@ -4,10 +4,10 @@ repos:
       - id: stylua
         stages: [pre-commit]
     repo: https://github.com/JohnnyMorganz/StyLua
-    rev: v0.20.0
+    rev: v2.6.0
 
   - hooks:
       - id: commitizen
         stages: [commit-msg]
     repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.30.0
+    rev: v4.19.3
