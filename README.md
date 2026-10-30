@@ -19,12 +19,11 @@ A NeoVim plugin written in Lua that integrates with [chezmoi](https://www.chezmo
 ## Migration
 
 > [!WARNING] 
-> **Breaking changes on "main":** The "main" branch introduces changes that are not backward-compatible with version "1.0.0". 
-> If you need the legacy implementation (with Telescope and Plenary), use the [Version 1.0.0](https://github.com/andre-kotake/nvim-chezmoi/tree/1.0.0).
+> **Breaking changes on "main":** The "main" branch (currently "2.0.0") introduces changes that are not backward-compatible with version "1.0.0". 
+>
+> If you need the legacy implementation (with Telescope and Plenary), use [Version 1.0.0](https://github.com/andre-kotake/nvim-chezmoi/tree/1.0.0).
 
 ## Installation
-
-[New v2 announcement!](https://github.com/andre-kotake/nvim-chezmoi/discussions/29)
 
 First, ensure that [chezmoi is in your PATH](https://www.chezmoi.io/install/).
 
