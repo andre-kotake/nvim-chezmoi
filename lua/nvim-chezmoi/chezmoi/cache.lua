@@ -5,43 +5,42 @@
 ---@class ChezmoiCache
 local M = {}
 
-local function contains_all(arr1, arr2)
-    -- Check if lengths are the same
-    if #arr1 ~= #arr2 then
-        return false
-    end
+local log = require("nvim-chezmoi.core.log")
 
-    local set = {}
-    for _, v in ipairs(arr2) do
-        set[v] = true
-    end
+---@type table<string, table<string, ChezmoiCacheEntry>>
+local store = {}
 
-    for _, v in ipairs(arr1) do
-        if not set[v] then
-            return false
-        end
-    end
-    return true
+---@param args string[]|nil
+---@return string
+local function get_arg_key(args) return args and table.concat(args, "\0") or "" end
+
+---@param cmd string
+---@param args string[]|nil
+---@return string
+local function describe(cmd, args)
+    return table.concat({ cmd, table.concat(args or {}, " ") }, " ")
+end
+
+---@param cache_state string
+---@param cmd_str string
+local function log_debug(cache_state, cmd_str)
+    log.debug(cache_state .. ": '" .. cmd_str .. "'")
 end
 
 ---@param cmd string
 ---@param args string[]|nil
 ---@return ChezmoiCacheEntry|nil
 M.find = function(cmd, args)
-    local cmd_args = { cmd }
-    vim.list_extend(cmd_args, args or {})
+    local bucket = store[cmd]
+    local entry = bucket and bucket[get_arg_key(args)]
 
-    local cached = M[cmd]
-
-    if cached ~= nil then
-        if not contains_all(cached.args, cmd_args) then
-            return nil
-        end
-
-        return cached
+    if entry then
+        log_debug("cache hit", describe(cmd, args))
+    else
+        log_debug("cache miss", describe(cmd, args))
     end
 
-    return nil
+    return entry
 end
 
 ---@param cmd string
@@ -53,23 +52,47 @@ M.find_success = function(cmd, args)
         return cached
     end
 
+    if cached ~= nil then
+        log_debug("cache entry not successful, ignoring", describe(cmd, args))
+    end
     return nil
 end
 
 ---@param cmd string
 ---@param args string[]|nil
 ---@param result ChezmoiCommandResult
----@return ChezmoiCacheEntry
+---@return ChezmoiCacheEntry entry
+---@return fun() invalidate Removes this entry only if it is still the stored one
 M.new = function(cmd, args, result)
-    local cmd_args = { cmd }
-    vim.list_extend(cmd_args, args or {})
+    local arg_key = get_arg_key(args)
 
-    M[cmd] = {
-        args = cmd_args,
+    local entry = {
+        args = args or {},
         result = result,
     }
 
-    return M[cmd]
+    store[cmd] = store[cmd] or {}
+    store[cmd][arg_key] = entry
+
+    log_debug(
+        "cache store success=" .. tostring(result.success),
+        describe(cmd, args)
+    )
+
+    local function invalidate()
+        local bucket = store[cmd]
+        if bucket and bucket[arg_key] == entry then
+            bucket[arg_key] = nil
+            log_debug("cache invalidate", describe(cmd, args))
+        else
+            log_debug(
+                "cache invalidate skipped (replaced or removed)",
+                describe(cmd, args)
+            )
+        end
+    end
+
+    return entry, invalidate
 end
 
 return M
