@@ -41,6 +41,7 @@ local M = {
 local setup_plugin = function()
     local chezmoi_edit = require("nvim-chezmoi.chezmoi.commands.edit")
     local chezmoi_apply = require("nvim-chezmoi.chezmoi.commands.apply")
+    local chezmoi_diff = require("nvim-chezmoi.chezmoi.commands.diff")
     local chezmoi_exec_tmpl =
         require("nvim-chezmoi.chezmoi.commands.execute_template")
     local utils = require("nvim-chezmoi.core.utils")
@@ -50,6 +51,7 @@ local setup_plugin = function()
     chezmoi_edit:init(M.opts)
     chezmoi_edit:create_user_commands()
     chezmoi_apply:create_user_commands()
+    chezmoi_diff:create_user_commands()
 
     vim.filetype.add({
         pattern = {
