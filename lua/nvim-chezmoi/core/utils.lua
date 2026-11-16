@@ -17,11 +17,11 @@ end
 
 M.is_child_of = function(parent_dir, file_path)
     -- Normalize paths for consistent comparison
-    local parent_dir_norm = vim.fs.normalize(parent_dir)
+    local parent_dir_norm = vim.fs.normalize(parent_dir):gsub("/$", "")
     local file_path_norm = vim.fs.normalize(file_path)
 
-    -- Check if file_path is a child of parent_dir
-    return file_path_norm:sub(1, #parent_dir_norm) == parent_dir_norm
+    return file_path_norm == parent_dir_norm
+        or file_path_norm:sub(1, #parent_dir_norm + 1) == parent_dir_norm .. "/"
 end
 
 M.augroup = function(name)
