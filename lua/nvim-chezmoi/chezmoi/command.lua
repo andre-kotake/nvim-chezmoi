@@ -1,6 +1,7 @@
 local log = require("nvim-chezmoi.core.log")
 local utils = require("nvim-chezmoi.core.utils")
 local job = require("nvim-chezmoi.core.job")
+local cache = require("nvim-chezmoi.chezmoi.cache")
 
 ---Result of an executed command
 ---@class ChezmoiCommandResult
@@ -28,6 +29,7 @@ local job = require("nvim-chezmoi.core.job")
 ---@class ChezmoiCommand
 ---@field cmd string
 ---@field args? string[] Default args for command.
+---@field cacheable? boolean Cache successful results in `chezmoi.cache`.
 
 ---@class ChezmoiCommand
 local M = {
@@ -100,11 +102,20 @@ end
 
 ---@param self ChezmoiCommand
 ---@param args? string[]
+---@return string[] Args after `cmd`: `{ ...args, ...self.args }`.
+local function full_args(self, args)
+    local all = {}
+    vim.list_extend(all, args or {})
+    vim.list_extend(all, self.args or {})
+    return all
+end
+
+---@param self ChezmoiCommand
+---@param args? string[]
 ---@return string[] Full argv: `{ "chezmoi", cmd, ...args, ...self.args }`.
 local function full_argv(self, args)
     local argv = { "chezmoi", self.cmd }
-    vim.list_extend(argv, args or {})
-    vim.list_extend(argv, self.args or {})
+    vim.list_extend(argv, full_args(self, args))
     return argv
 end
 
@@ -112,9 +123,18 @@ end
 ---@param stdin? string[]|string
 ---@return ChezmoiCommandResult
 function M:exec(args, stdin)
+    if self.cacheable then
+        local cached = cache.find_success(self.cmd, full_args(self, args))
+        if cached then
+            return cached.result
+        end
+    end
+
     local result = job.run(full_argv(self, args), stdin)
     if not result.success then
         log.error(result.data)
+    elseif self.cacheable then
+        cache.new(self.cmd, full_args(self, args), result)
     end
 
     return result
@@ -122,8 +142,28 @@ end
 
 ---@param args? string[]
 ---@param callback? fun(result: ChezmoiCommandResult)
----@return vim.SystemObj Process handle.
+---@return vim.SystemObj? Process handle, `nil` on cache hit.
 function M:async(args, callback)
+    if self.cacheable then
+        local cached = cache.find_success(self.cmd, full_args(self, args))
+        if cached then
+            if callback then
+                vim.schedule(function() callback(cached.result) end)
+            end
+            return nil
+        end
+
+        local cmd, cmd_args = self.cmd, full_args(self, args)
+        return job.run_async(full_argv(self, args), nil, nil, function(result)
+            if result.success then
+                cache.new(cmd, cmd_args, result)
+            end
+            if callback then
+                callback(result)
+            end
+        end)
+    end
+
     return job.run_async(full_argv(self, args), nil, nil, callback)
 end
 
