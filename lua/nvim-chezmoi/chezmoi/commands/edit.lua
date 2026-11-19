@@ -449,19 +449,6 @@ function M:detect_filetype(buf)
         end
     end)
 
-    -- if not a template but has a non-empty file type
-    if not (is_tmpl or (vim.bo[buf].filetype or "") == "") then
-        log.debug(
-            "Non-template source file '"
-                .. vim.fs.basename(source_file)
-                .. "' already has a filetype '"
-                .. vim.bo[buf].filetype
-                .. "'; using it directly"
-        )
-
-        return
-    end
-
     local ok, s = pcall(vim.api.nvim_buf_get_var, buf, "encrypted_source_path")
     if ok then
         log.debug(
